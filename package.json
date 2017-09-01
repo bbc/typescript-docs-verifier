@@ -1,0 +1,30 @@
+{
+  "name": "typescript-docs-verifier",
+  "version": "0.1.0",
+  "main": "index.js",
+  "license": "BBC",
+  "scripts": {
+    "start": "node index.js",
+    "test": "scripts/test-with-coverage.sh",
+    "posttest": "standard"
+  },
+  "devDependencies": {
+    "chai": "^4.0.2",
+    "mocha": "^3.4.2",
+    "mocha-jenkins-reporter": "^0.3.8",
+    "nsp": "^2.6.3",
+    "nyc": "^11.0.2",
+    "standard": "^10.0.3",
+    "verify-it": "git+ssh://git@github.com/bbc/verify-it#1.0.0"
+  },
+  "dependencies": {
+    "bluebird": "^3.5.0",
+    "chalk": "^2.1.0",
+    "fs-jetpack": "^1.2.0",
+    "left-pad": "^1.1.3",
+    "ora": "^1.3.0",
+    "ts-node": "^3.3.0",
+    "tsconfig": "^7.0.0",
+    "typescript": "^2.5.2"
+  }
+}
