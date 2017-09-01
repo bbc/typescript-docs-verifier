@@ -46,7 +46,7 @@ const testCodeCompilation = (example, index, compiler) => {
     .catch((error) => {
       return {
         rawCode: example.rawCode,
-        error: error.message,
+        error,
         file: example.file,
         index: index + 1
       }
