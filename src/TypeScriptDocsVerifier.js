@@ -9,6 +9,50 @@ const TypeScriptCompiler = require('./TypeScriptCompiler')
 
 const WORKING_DIRECTORY = path.join(process.cwd(), 'compiled-docs')
 
+const cleanWorkingDirectory = () => FSJetpack.removeAsync(WORKING_DIRECTORY)
+
+const extractFileCodeBlocks = (file, name, main) => {
+  return extractCodeBlocks(file)
+    .map((block) => {
+      return {
+        file,
+        rawCode: block,
+        sanitisedCode: wrapCodeForCompilation(block, name, path.join(process.cwd(), main))
+      }
+    })
+}
+
+const extractAllCodeBlocks = (documentationFiles, name, main) => {
+  return Bluebird.resolve()
+    .then(() => extractPackageInfo())
+    .then((packageInfo) => {
+      return Bluebird.all(documentationFiles)
+        .map((file) => extractFileCodeBlocks(file, packageInfo.name, packageInfo.main))
+        .reduce((previous, current) => {
+          return previous.concat(current)
+        }, [])
+    })
+}
+
+const testCodeCompilation = (example, index, compiler) => {
+  return compiler.compile(example.sanitisedCode)
+    .then(() => {
+      return {
+        rawCode: example.rawCode,
+        file: example.file,
+        index: index + 1
+      }
+    })
+    .catch((error) => {
+      return {
+        rawCode: example.rawCode,
+        error: error.message,
+        file: example.file,
+        index: index + 1
+      }
+    })
+}
+
 const verifyDocs = (documentationFiles) => {
   documentationFiles = documentationFiles || ['README.md']
   documentationFiles = Array.isArray(documentationFiles) ? documentationFiles : [documentationFiles]
@@ -16,45 +60,13 @@ const verifyDocs = (documentationFiles) => {
   const configOptions = tsconfig.loadSync(process.cwd())
   const compiler = new TypeScriptCompiler(WORKING_DIRECTORY, configOptions.config.compilerOptions)
 
-  const file = documentationFiles[0]
   return Bluebird.resolve()
     .then(cleanWorkingDirectory)
     .then(() => FSJetpack.dirAsync(WORKING_DIRECTORY))
-    .then(() => extractPackageInfo())
-    .then((packageInfo) => {
-      const main = packageInfo.main
-      const name = packageInfo.name
-
-      return extractCodeBlocks(file)
-        .map((block) => {
-          return {
-            rawCode: block,
-            sanitisedCode: wrapCodeForCompilation(block, name, path.join(process.cwd(), main))
-          }
-        })
-    })
-    .map((example, index) => {
-      return compiler.compile(example.sanitisedCode)
-        .then(() => {
-          return {
-            rawCode: example.rawCode,
-            file,
-            index: index + 1
-          }
-        })
-        .catch((error) => {
-          return {
-            rawCode: example.rawCode,
-            error: error.message,
-            file,
-            index: index + 1
-          }
-        })
-    })
+    .then(() => extractAllCodeBlocks(documentationFiles))
+    .map((example, index) => testCodeCompilation(example, index, compiler))
     .finally(cleanWorkingDirectory)
 }
-
-const cleanWorkingDirectory = () => FSJetpack.removeAsync(WORKING_DIRECTORY)
 
 module.exports = {
   verifyDocs
