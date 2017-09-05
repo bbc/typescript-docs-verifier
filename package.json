@@ -2,6 +2,7 @@
   "name": "typescript-docs-verifier",
   "version": "0.1.0",
   "main": "index.js",
+  "bin" : "./bin/compile-typescript-docs.js",
   "license": "BBC",
   "scripts": {
     "start": "node index.js",

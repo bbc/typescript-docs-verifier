@@ -2,10 +2,10 @@ const path = require('path')
 const fsJetpack = require('fs-jetpack')
 const tsNode = require('ts-node')
 
-function TypeScriptCompiler (workingDirectory, compilerOptions) {
+function TypeScriptRunner (workingDirectory, compilerOptions) {
   tsNode.register({ compilerOptions })
 
-  this.compile = (code) => {
+  this.run = (code) => {
     const id = Math.random()
     const targetFile = path.join(workingDirectory, `block-${id}.ts`)
     return fsJetpack.writeAsync(targetFile, code)
@@ -15,4 +15,4 @@ function TypeScriptCompiler (workingDirectory, compilerOptions) {
   }
 }
 
-module.exports = TypeScriptCompiler
+module.exports = TypeScriptRunner

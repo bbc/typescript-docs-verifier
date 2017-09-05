@@ -1,1 +1,3 @@
-console.log('Export')
+module.exports = {
+  compileSnippets: require('./src/compileSnippets')
+}

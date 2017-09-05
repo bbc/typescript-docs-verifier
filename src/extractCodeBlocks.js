@@ -1,7 +1,7 @@
 const fsJetpack = require('fs-jetpack')
 const Bluebird = require('bluebird')
 
-const TYPESCRIPT_CODE_PATTERN = /(?:```typescript\n)((?:\n|.)*?)(?:(?=```))/g
+const TYPESCRIPT_CODE_PATTERN = /(?:```typescript\n)((?:\n|.)*?)(?:(?=```))/gi
 
 const extractCodeBlocks = (markdownFilePath) => {
   return Bluebird.resolve()

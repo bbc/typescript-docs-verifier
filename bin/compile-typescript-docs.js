@@ -2,7 +2,7 @@
 const ora = require('ora')
 const chalk = require('chalk')
 const leftPad = require('left-pad')
-const TypeScriptDocsVerifier = require('../src/TypeScriptDocsVerifier')
+const TypeScriptDocsVerifier = require('../index')
 const yargs = require('yargs')
 
 const ERROR_LINE_EXTRACTION_PATTERN = /\.ts\s+\((\d+),\d+\):/
@@ -45,7 +45,7 @@ const findErrorLines = (error) => {
 
 const formatError = (error) => '  ' + error.message.split('\n').join('\n  ')
 
-TypeScriptDocsVerifier.verifyDocs(inputFiles)
+TypeScriptDocsVerifier.compileSnippets(inputFiles)
   .then((results) => {
     spinner.info(`Found ${results.length} TypeScript snippets`).start()
     results.forEach((result) => {
