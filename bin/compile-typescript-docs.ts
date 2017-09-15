@@ -1,9 +1,10 @@
 #! /usr/bin/env node
-const ora = require('ora')
-const chalk = require('chalk')
+import * as ora from 'ora'
+import * as chalk from 'chalk'
+import * as yargs from 'yargs'
+import { TSError } from 'ts-node/dist/index'
 const leftPad = require('left-pad')
-const TypeScriptDocsVerifier = require('../dist/index')
-const yargs = require('yargs')
+import { SnippetCompiler } from '../index'
 
 const ERROR_LINE_EXTRACTION_PATTERN = /\.ts\s+\((\d+),\d+\):/
 
@@ -19,12 +20,12 @@ const inputFiles = argv['input-files']
 const spinner = ora()
 spinner.info(`Compiling documentation TypeScript code snippets from ${inputFiles.join(', ')}`).start()
 
-const formatCode = (code, errorLines) => {
+const formatCode = (code: string, errorLines: number[]) => {
   const lines = code.split('\n')
     .map((line, index) => {
       const lineNumber = index + 1
       if (errorLines.indexOf(lineNumber) !== -1) {
-        return chalk`{bold.red ${leftPad(lineNumber, 2)}| ${line}}`
+        return (chalk as any)`{bold.red ${leftPad(lineNumber, 2)}| ${line}}`
       } else {
         return `${leftPad(lineNumber, 2)}| ${line}`
       }
@@ -32,39 +33,41 @@ const formatCode = (code, errorLines) => {
   return '    ' + lines.join('\n    ')
 }
 
-const findErrorLines = (error) => {
+const findErrorLines = (error: TSError) => {
   const messages = error.diagnostics.map((diagnostic) => diagnostic.message)
-  return messages.map((message) => {
+  return messages.map((message: string) => {
     const match = ERROR_LINE_EXTRACTION_PATTERN.exec(message)
     if (match && match[1]) {
       return match[1]
+    } else {
+      return NaN
     }
-  }).filter((lineNumber) => lineNumber)
-    .map((lineNumber) => parseInt(lineNumber))
+  }).filter((lineNumber: string) => lineNumber)
+    .map((lineNumber: string) => parseInt(lineNumber, 10))
 }
 
-const formatError = (error) => '  ' + error.message.split('\n').join('\n  ')
+const formatError = (error: Error) => '  ' + error.message.split('\n').join('\n  ')
 
-TypeScriptDocsVerifier.compileSnippets(inputFiles)
+SnippetCompiler.compileSnippets(inputFiles)
   .then((results) => {
     spinner.info(`Found ${results.length} TypeScript snippets`).start()
     results.forEach((result) => {
       if (result.error) {
         const errorLines = findErrorLines(result.error)
         process.exitCode = 1
-        spinner.fail(chalk`{red.bold Error compiling example code block ${result.index} in file ${result.file}:}`)
+        spinner.fail((chalk as any)`{red.bold Error compiling example code block ${result.index} in file ${result.file}:}`)
         console.log(formatError(result.error))
         console.log()
-        console.log(chalk`{blue.bold  Original code:}`)
+        console.log((chalk as any)`{blue.bold  Original code:}`)
         console.log(formatCode(result.snippet, errorLines))
       }
     })
   })
   .then(() => {
     if (process.exitCode) {
-      spinner.fail(chalk`{red.bold Compilation failed, see above errors}`)
+      spinner.fail((chalk as any)`{red.bold Compilation failed, see above errors}`)
     } else {
-      spinner.succeed(chalk`{green.bold All snippets compiled OK}`)
+      spinner.succeed((chalk as any)`{green.bold All snippets compiled OK}`)
     }
   })
   .catch((error) => {

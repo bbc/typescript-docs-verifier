@@ -12,12 +12,12 @@ This library searches markdown files for blocks marked:
 ```
 ````
 
-These code blocks are then tested for compilation, replacing any imports of the current project with an import of the `main` file from `package.json`.
+These code blocks are extracted and any imports from the current project are replaced with an import of the `main` file from `package.json`. Each code snippet is compiled (but not run) and any compilation errors are reported.
 
 ## Script usage
 
 ```bash
-node_modules/compile-docs.js [--input-files <markdown-files-to-test>]
+node_modules/compile-typescript-docs.js [--input-files <markdown-files-to-test>]
 ```
 
 * `--input-files` is optional and defaults to `README.md`.
@@ -25,6 +25,27 @@ node_modules/compile-docs.js [--input-files <markdown-files-to-test>]
 * The exit code is 1 if there are any compilation errors and 0 otherwise.
 
 ## Library usage
+
+### TypeScript
+
+```typescript
+import { SnippetCompiler, SnippetCompilationResult } from 'typescript-docs-verifier'
+
+const inputFiles = ['README', 'examples.md'] // defaults for 'README.md' if not provided
+SnippetCompiler.compileSnippets(inputFiles)
+  .then((results: SnippetCompilationResult[]) => {
+    results.forEach((result: SnippetCompilationResult) => {
+      if (result.error) {
+        console.log(`Error compiling example code block ${result.index} in file ${result.file}`)
+        console.log(result.error.message)
+        console.log('Original code:')
+        console.log(result.snippet)
+      }
+    })
+  })
+```
+
+### JavaScript
 
 ```javascript
 const TypeScriptDocsVerifier = require('typescript-docs-verifier')
@@ -37,7 +58,7 @@ TypeScriptDocsVerifier.compileSnippets(inputFiles)
         console.log(`Error compiling example code block ${result.index} in file ${result.file}`)
         console.log(result.error.message)
         console.log('Original code:')
-        console.log(result.rawCode)
+        console.log(result.snippet)
       }
     })
   })

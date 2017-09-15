@@ -1,0 +1,17 @@
+{
+  "extends": [
+    "tslint-config-standard",
+    "tslint-immutable"
+  ],
+  "tslint.enable": "true",
+  "rules": {
+    "readonly-keyword": true,
+    "no-let": true,
+    "ban-types": [true, 
+      ["String", "Use string instead."],
+      ["Number", "Use number instead."],
+      ["Boolean", "Use boolean instead."],
+      ["Object", "Use object instead."]
+    ]
+  }
+}
