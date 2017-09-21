@@ -96,8 +96,23 @@ ${strings[3]}
         }])
     })
 
-    verify.it('returns multiple results when multiple TypeScript snippets are supplied', Gen.array(genSnippet, 3), (snippets) => {
-      
-    })
+    verify.it(
+      'returns multiple results when multiple TypeScript snippets are supplied',
+      Gen.array(genSnippet, Gen.integerBetween(2, 6)()), (snippets) => {
+        const markdownBlocks = snippets.map(wrapSnippet)
+        const markdown = markdownBlocks.join('\n')
+        const expected = snippets.map((snippet, index) => {
+          return {
+            file: 'README.md',
+            index: index + 1,
+            snippet
+          }
+        })
+
+        return createProject({ markdownFiles: [{ name: 'README.md', contents: markdown }] })
+          .then(() => TypeScriptDocsVerifier.compileSnippets())
+          .should.eventually.eql(expected)
+      }
+    )
   })
 })
