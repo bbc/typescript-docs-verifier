@@ -1,11 +1,11 @@
-import * as path from 'path'
 import * as tsconfig from 'tsconfig'
 import * as Bluebird from 'bluebird'
 import * as fsExtra from 'fs-extra'
 import { TSError } from 'ts-node/dist/index'
 import { TypeScriptRunner } from './TypeScriptRunner'
-import { PackageInfo, PackageDefinition } from './PackageInfo'
+import { PackageInfo } from './PackageInfo'
 import { CodeBlockExtractor } from './CodeBlockExtractor'
+import { LocalImportSubstituter } from './LocalImportSubstituter'
 import { CodeWrapper } from './CodeWrapper'
 
 interface CodeBlock {
@@ -22,60 +22,57 @@ export interface SnippetCompilationResult {
 }
 
 export class SnippetCompiler {
-  private static readonly WORKING_DIRECTORY = path.join(process.cwd(), 'compiled-docs')
+  private readonly runner: TypeScriptRunner
 
-  private constructor () {}
-
-  static compileSnippets (documentationFiles: string[] | string = ['README.md']): Bluebird<SnippetCompilationResult[]> {
-    const files = SnippetCompiler.wrapIfString(documentationFiles)
+  constructor (private readonly workingDirectory: string) {
     const configOptions = tsconfig.loadSync(process.cwd())
-    const runner = new TypeScriptRunner(SnippetCompiler.WORKING_DIRECTORY, configOptions.config.compilerOptions)
+    this.runner = new TypeScriptRunner(this.workingDirectory, configOptions.config.compilerOptions)
+  }
 
+  compileSnippets (documentationFiles: string[]): Bluebird<SnippetCompilationResult[]> {
     return Bluebird.resolve()
-      .then(SnippetCompiler.cleanWorkingDirectory)
-      .then(() => fsExtra.ensureDir(SnippetCompiler.WORKING_DIRECTORY))
-      .then(() => SnippetCompiler.extractAllCodeBlocks(files))
-      .map<CodeBlock, SnippetCompilationResult>((example, index) => SnippetCompiler.testCodeCompilation(example, index, runner))
-      .finally(SnippetCompiler.cleanWorkingDirectory)
+      .then(() => this.cleanWorkingDirectory())
+      .then(() => fsExtra.ensureDir(this.workingDirectory))
+      .then(() => this.extractAllCodeBlocks(documentationFiles))
+      .map((example: CodeBlock, index) => this.testCodeCompilation(example, index))
+      .finally(() => this.cleanWorkingDirectory())
   }
 
-  private static wrapIfString (arrayOrString: string[] | string) {
-    if (Array.isArray(arrayOrString)) {
-      return arrayOrString
-    } else {
-      return [arrayOrString]
-    }
+  private cleanWorkingDirectory () {
+    return fsExtra.remove(this.workingDirectory)
   }
 
-  private static cleanWorkingDirectory () {
-    return fsExtra.remove(SnippetCompiler.WORKING_DIRECTORY)
-  }
-
-  private static extractAllCodeBlocks = (documentationFiles: string[]) => {
+  private extractAllCodeBlocks (documentationFiles: string[]) {
     return Bluebird.resolve()
       .then(() => PackageInfo.read())
-      .then((packageDefn) => {
+      .then((packageDefn) => new LocalImportSubstituter(packageDefn))
+      .then((importSubstituter) => {
         return Bluebird.all(documentationFiles)
-          .map((file: string) => SnippetCompiler.extractFileCodeBlocks(file, packageDefn))
+          .map((file: string) => this.extractFileCodeBlocks(file, importSubstituter))
           .reduce((previous: CodeBlock[], current: CodeBlock[]) => {
             return previous.concat(current)
           }, [])
       })
   }
 
-  private static extractFileCodeBlocks = (file: string, packageDefn: PackageDefinition): Bluebird<CodeBlock[]> => {
+  private extractFileCodeBlocks (file: string, importSubstituter: LocalImportSubstituter): Bluebird<CodeBlock[]> {
     return CodeBlockExtractor.extract(file)
       .map((block: string) => {
         return {
           file,
           snippet: block,
-          sanitisedCode: CodeWrapper.wrap(block, packageDefn)
+          sanitisedCode: this.sanitiseCodeBlock(importSubstituter, block)
         }
       })
   }
 
-  private static testCodeCompilation (example: CodeBlock, index: number, runner: TypeScriptRunner): Promise<SnippetCompilationResult> {
-    return runner.run(example.sanitisedCode)
+  private sanitiseCodeBlock (importSubstituter: LocalImportSubstituter, block: string): string {
+    const localisedBlock = importSubstituter.substituteLocalPackageImports(block)
+    return CodeWrapper.wrap(localisedBlock)
+  }
+
+  private testCodeCompilation (example: CodeBlock, index: number): Promise<SnippetCompilationResult> {
+    return this.runner.run(example.sanitisedCode)
       .then(() => {
         return {
           snippet: example.snippet,

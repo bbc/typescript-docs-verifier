@@ -4,6 +4,8 @@ import * as fsExtra from 'fs-extra'
 export class CodeBlockExtractor {
   static readonly TYPESCRIPT_CODE_PATTERN = /(?:```typescript\n)((?:\n|.)*?)(?:(?=```))/gi
 
+  private constructor () {}
+
   static extract (markdownFilePath: string): Bluebird<string[]> {
     return Bluebird.resolve()
       .then(() => CodeBlockExtractor.readFile(markdownFilePath))

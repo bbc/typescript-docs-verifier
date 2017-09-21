@@ -7,6 +7,8 @@ export interface PackageDefinition {
 }
 
 export class PackageInfo {
+  private constructor () {}
+
   static read (): Promise<PackageDefinition> {
     const packageJsonPath = path.join(process.cwd(), 'package.json')
     return fsExtra.readFile(packageJsonPath)

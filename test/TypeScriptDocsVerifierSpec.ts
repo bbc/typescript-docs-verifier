@@ -38,7 +38,7 @@ const createProject = (files: ProjectFiles = defaultProjectFiles) => {
 }
 
 const genSnippet = () => {
-  const name = 'a' + Gen.string()
+  const name = 'a' + Gen.string().replace(/[-]/g, '')
   const value = Gen.string()
   return `const ${name} = "${value}"`
 }
