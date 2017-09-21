@@ -4,7 +4,7 @@ import * as chalk from 'chalk'
 import * as yargs from 'yargs'
 import { TSError } from 'ts-node/dist/index'
 const leftPad = require('left-pad')
-import { SnippetCompiler } from '../index'
+import * as TypeScriptDocsVerifier from '../index'
 
 const ERROR_LINE_EXTRACTION_PATTERN = /\.ts\s+\((\d+),\d+\):/
 
@@ -48,7 +48,7 @@ const findErrorLines = (error: TSError) => {
 
 const formatError = (error: Error) => '  ' + error.message.split('\n').join('\n  ')
 
-SnippetCompiler.compileSnippets(inputFiles)
+TypeScriptDocsVerifier.compileSnippets(inputFiles)
   .then((results) => {
     spinner.info(`Found ${results.length} TypeScript snippets`).start()
     results.forEach((result) => {
