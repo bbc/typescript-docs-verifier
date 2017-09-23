@@ -84,7 +84,25 @@ ${strings[3]}
         .should.eventually.eql([])
     })
 
+    verify.it('returns an error if a documentation file does not exist', Gen.string, (filename) => {
+      return createProject()
+        .then(() => TypeScriptDocsVerifier.compileSnippets(['README.md', filename]))
+        .should.be.rejectedWith(filename)
+    })
+
     verify.it('returns a single element result array when a valid typescript block is supplied', genSnippet, (snippet) => {
+      const typeScriptMarkdown = wrapSnippet(snippet)
+
+      return createProject({ markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }] })
+        .then(() => TypeScriptDocsVerifier.compileSnippets('README.md'))
+        .should.eventually.eql([{
+          file: 'README.md',
+          index: 1,
+          snippet
+        }])
+    })
+
+    verify.it('reads from README.md if no snippets are supplied', genSnippet, (snippet) => {
       const typeScriptMarkdown = wrapSnippet(snippet)
 
       return createProject({ markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }] })
@@ -94,6 +112,14 @@ ${strings[3]}
           index: 1,
           snippet
         }])
+    })
+
+    verify.it('returns an empty array if an empty array is provided', genSnippet, (snippet) => {
+      const typeScriptMarkdown = wrapSnippet(snippet)
+
+      return createProject({ markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }] })
+        .then(() => TypeScriptDocsVerifier.compileSnippets([]))
+        .should.eventually.eql([])
     })
 
     verify.it(
