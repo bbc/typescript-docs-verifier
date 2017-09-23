@@ -1,6 +1,7 @@
 export class CodeWrapper {
   private static defaultImport = "import 'path'"
 
+  /* istanbul ignore next */
   private constructor () {}
 
   static wrap (code: string): string {

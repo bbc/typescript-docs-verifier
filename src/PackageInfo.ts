@@ -7,6 +7,7 @@ export interface PackageDefinition {
 }
 
 export class PackageInfo {
+  /* istanbul ignore next */
   private constructor () {}
 
   static read (): Promise<PackageDefinition> {
