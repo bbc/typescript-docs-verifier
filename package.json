@@ -1,8 +1,7 @@
 {
   "name": "typescript-docs-verifier",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "main": "dist/index.js",
-  "bin": "./dist/bin/compile-typescript-docs.js",
   "license": "BBC",
   "scripts": {
     "prestart": "yarn build",
