@@ -26,7 +26,7 @@
     "chai-as-promised": "^7.1.1",
     "mocha": "^3.4.2",
     "mocha-jenkins-reporter": "^0.3.8",
-    "nsp": "^2.6.3",
+    "nsp": "^2.8.1",
     "nyc": "^11.0.2",
     "tslint": "^5.7.0",
     "tslint-config-standard": "^6.0.1",
