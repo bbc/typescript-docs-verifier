@@ -1,0 +1,14 @@
+.nyc_output
+bin
+node_modules
+scripts
+src
+test
+test-reports
+
+.gitignore
+index.ts
+Jenkinsfile
+tsconfig.json
+tslint.json
+yarn.lock
