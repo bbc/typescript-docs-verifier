@@ -30,7 +30,9 @@ pipeline {
       steps {
         sh '''
           sed -i /^dist$/d .gitignore
-          git add dist
+          rm -rf dist
+          yarn build
+          git add --all dist
           git commit --allow-empty -m "Automated CI commit of compiled javascript"
           git push origin HEAD:master
         '''
