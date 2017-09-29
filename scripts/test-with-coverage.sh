@@ -8,6 +8,7 @@ nyc \
   --report-dir "./test-reports/coverage" \
   mocha \
     --require source-map-support/register \
+    --timeout 3000 \
     --recursive \
     --reporter mocha-jenkins-reporter \
     dist/test/TestConfiguration.js dist/test/*Spec.js dist/test/**/*Spec.js

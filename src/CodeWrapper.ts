@@ -1,22 +1,16 @@
 export class CodeWrapper {
-  private static defaultImport = "import 'path'"
-
   /* istanbul ignore next */
   private constructor () {}
 
   static wrap (code: string): string {
     const codeLines = code.split('\n')
-    const importLines = CodeWrapper.findImportLines(codeLines)
+    const importLines = codeLines.filter((line) => line.trim().startsWith('import '))
     const otherLines = codeLines.filter((line) => !line.trim().startsWith('import'))
+    const functionName = `fn${Math.random().toString().replace(/\./, '')}`
 
     const wrappedCode = `${importLines.join('\n')}
-      const fn = () => {${otherLines.join('\n')}
+      const ${functionName} = () => {${otherLines.join('\n')}
       }`
     return wrappedCode
-  }
-
-  private static findImportLines (codeLines: string[]): string[] {
-    const importLines = codeLines.filter((line) => line.trim().startsWith('import '))
-    return importLines.length === 0 ? [CodeWrapper.defaultImport] : importLines
   }
 }

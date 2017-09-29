@@ -3,8 +3,8 @@ import * as fsExtra from 'fs-extra'
 import * as TsNode from 'ts-node/dist/index'
 
 export class TypeScriptRunner {
-  constructor (private readonly workingDirectory: string, private readonly compilerOptions: TsNode.Options) {
-    TsNode.register({ compilerOptions: this.compilerOptions })
+  constructor (private readonly workingDirectory: string, typeScriptOptions: any) {
+    TsNode.register(typeScriptOptions)
   }
 
   run (code: string): Promise<void> {

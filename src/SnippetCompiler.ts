@@ -26,7 +26,7 @@ export class SnippetCompiler {
 
   constructor (private readonly workingDirectory: string) {
     const configOptions = tsconfig.loadSync(process.cwd())
-    this.runner = new TypeScriptRunner(this.workingDirectory, configOptions.config.compilerOptions)
+    this.runner = new TypeScriptRunner(this.workingDirectory, configOptions.config)
   }
 
   compileSnippets (documentationFiles: string[]): Bluebird<SnippetCompilationResult[]> {

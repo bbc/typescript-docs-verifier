@@ -19,31 +19,64 @@ const defaultMainFile = {
 
 const defaultMarkdownFile = {
   name: 'README.md',
-  contents: FsExtra.readFileSync(path.join(fixturePath, 'package-default.json'))
+  contents: FsExtra.readFileSync(path.join(fixturePath, 'no-typescript.md'))
+}
+
+const defaultTsConfig = {
+  compilerOptions: {
+    target: 'ES2015',
+    module: 'commonjs',
+    sourceMap: true,
+    allowJs: true,
+    outDir: './dist',
+    noEmitOnError: true,
+    pretty: true,
+    strict: true,
+    noImplicitAny: true,
+    strictNullChecks: true,
+    noImplicitThis: true,
+    alwaysStrict: true,
+    noImplicitReturns: true,
+    typeRoots: [path.join(__dirname, '..', '..', 'node_modules', '@types')]
+  },
+  exclude: [ 'node_modules', 'example' ]
+}
+
+type File = {
+  readonly name: string
+  readonly contents: string | Buffer
 }
 
 type ProjectFiles = {
   readonly packageJson?: PackageDefinition
-  readonly markdownFiles?: { readonly name: string, readonly contents: string | Buffer }[]
-  readonly mainFile?: { readonly name: string, readonly contents: string }
+  readonly markdownFiles?: File[]
+  readonly mainFile?: File
+  readonly tsConfig?: string
 }
 
 const defaultProjectFiles = {
   packageJson: defaultPackageJson,
   markdownFiles: [defaultMarkdownFile],
-  mainFile: defaultMainFile
+  mainFile: defaultMainFile,
+  tsConfig: JSON.stringify(defaultTsConfig)
 }
 
 const createProject = (files: ProjectFiles = defaultProjectFiles) => {
-  const mainFile = files.mainFile || defaultMainFile
-  return Promise.resolve()
-    .then(() => FsExtra.writeFile(path.join(workingDirectory, 'package.json'), JSON.stringify((files.packageJson || defaultPackageJson))))
-    .then(() => FsExtra.writeFile(path.join(workingDirectory, mainFile.name), mainFile.contents))
-    .then(() => {
-      return (files.markdownFiles || []).forEach((file) => {
-        return FsExtra.writeFile(path.join(workingDirectory, file.name), file.contents)
-      })
-    })
+  const filesToWrite: File[] = [{
+    name: 'package.json',
+    contents: JSON.stringify((files.packageJson || defaultPackageJson))
+  }, {
+    name: (files.mainFile || defaultMainFile).name,
+    contents: (files.mainFile || defaultMainFile).contents
+  }, {
+    name: 'tsconfig.json',
+    contents: files.tsConfig || JSON.stringify(defaultTsConfig)
+  }]
+
+  const allFiles = filesToWrite.concat(files.markdownFiles || [])
+  return Promise.all(
+    allFiles.map((file: File) => FsExtra.writeFile(path.join(workingDirectory, file.name), file.contents))
+  )
 }
 
 const genSnippet = () => {
@@ -60,7 +93,7 @@ ${snippet}\`\`\``
 describe('TypeScriptDocsVerifier', () => {
   describe('compileSnippets', () => {
     beforeEach(() => {
-      return FsExtra.ensureDir(workingDirectory)
+      return FsExtra.ensureDir(path.join(workingDirectory))
         .then(() => process.chdir(workingDirectory))
     })
 
@@ -103,7 +136,6 @@ ${strings[3]}
       'returns a single element result array when a valid typescript block is supplied',
       genSnippet, Gen.string, (snippet, fileName) => {
         const typeScriptMarkdown = wrapSnippet(snippet)
-
         return createProject({ markdownFiles: [{ name: fileName, contents: typeScriptMarkdown }] })
           .then(() => TypeScriptDocsVerifier.compileSnippets(fileName))
           .should.eventually.eql([{
@@ -232,6 +264,41 @@ ${strings[3]}
         }
         const typeScriptMarkdown = wrapSnippet(snippet)
         return createProject({ markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }], mainFile })
+          .then(() => TypeScriptDocsVerifier.compileSnippets())
+          .should.eventually.eql([{
+            file: 'README.md',
+            index: 1,
+            snippet
+          }])
+      }
+    )
+
+    verify.it(
+      'localises imports of the current package if the package main is a js file', Gen.string, Gen.string, (name, main) => {
+        const packageJson: PackageDefinition = {
+          name,
+          main: `${main}.js`
+        }
+        const snippet = `
+          import { MyClass } from '${packageJson.name}'
+          const instance: any = MyClass()
+          instance.doStuff()`
+        const mainFile = {
+          name: `${packageJson.main}`,
+          contents: `
+            module.exports.MyClass = function MyClass () {
+              this.doStuff = () => {
+                return
+              }
+            }`
+        }
+        const typeScriptMarkdown = wrapSnippet(snippet)
+        const projectFiles = {
+          markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }],
+          mainFile,
+          packageJson
+        }
+        return createProject(projectFiles)
           .then(() => TypeScriptDocsVerifier.compileSnippets())
           .should.eventually.eql([{
             file: 'README.md',
