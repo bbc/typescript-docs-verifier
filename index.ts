@@ -3,6 +3,7 @@ import * as path from 'path'
 import { SnippetCompiler, SnippetCompilationResult } from './src/SnippetCompiler'
 
 const DEFAULT_FILES = ['README.md']
+const COMPILED_DOCS_FOLDER = 'compiled-docs'
 
 const wrapIfString = (arrayOrString: string[] | string) => {
   if (Array.isArray(arrayOrString)) {
@@ -13,7 +14,7 @@ const wrapIfString = (arrayOrString: string[] | string) => {
 }
 
 export function compileSnippets (markdownFileOrFiles: string | string[] = DEFAULT_FILES): Bluebird<SnippetCompilationResult[]> {
-  const workingDirectory = path.join(process.cwd(), 'compiled-docs')
+  const workingDirectory = path.join(process.cwd(), COMPILED_DOCS_FOLDER)
   const compiler = new SnippetCompiler(workingDirectory)
   return Bluebird.resolve(markdownFileOrFiles)
     .then(wrapIfString)
