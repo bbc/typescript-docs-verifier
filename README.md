@@ -73,6 +73,16 @@ TypeScriptDocsVerifier.compileSnippets(inputFiles)
 Run the tests:
 
 ```sh
-yarn install
-yarn test
+npm install
+npm test
 ```
+
+## Contributing
+
+See [these notes](./.github/CONTRIBUTING.md) for infomation for contributors.
+
+## License
+
+`typescript-docs-verifier` is available to all via the [Apache-2.0](./APACHE-2.0) license.
+
+Copyright &copy; 2017 BBC

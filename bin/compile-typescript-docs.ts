@@ -4,7 +4,7 @@ import * as ora from 'ora'
 import * as chalk from 'chalk'
 import * as yargs from 'yargs'
 import { TSError } from 'ts-node/dist/index'
-const leftPad = require('left-pad')
+import * as leftPad from 'left-pad'
 import * as TypeScriptDocsVerifier from '../index'
 
 const ERROR_LINE_EXTRACTION_PATTERN = /\.ts\s*\((\d+),\d+\):/

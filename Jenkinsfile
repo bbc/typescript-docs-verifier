@@ -19,9 +19,9 @@ pipeline {
     stage('Build and Test') {
       steps {
         sh '''
-          yarn install
-          yarn test
-          yarn compile-docs
+          npm install
+          npm test
+          npm compile-docs
         '''
       }
     }
@@ -41,7 +41,7 @@ pipeline {
         sh '''
           sed -i /^dist$/d .gitignore
           rm -rf dist
-          yarn build
+          npm build
           git add --all dist
           git commit --allow-empty -m "Automated CI commit of compiled javascript"
           git push origin HEAD:master
