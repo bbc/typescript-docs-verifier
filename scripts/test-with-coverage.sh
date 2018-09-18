@@ -5,6 +5,7 @@ nyc \
   --all \
   --reporter text --reporter html \
   --include "dist/src/**.js" \
+  --include "dist/index.js" \
   --report-dir "./test-reports/coverage" \
   mocha \
     --require source-map-support/register \

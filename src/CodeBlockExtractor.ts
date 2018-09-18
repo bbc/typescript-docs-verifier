@@ -1,4 +1,3 @@
-import * as Bluebird from 'bluebird'
 import * as fsExtra from 'fs-extra'
 
 export class CodeBlockExtractor {
@@ -7,8 +6,8 @@ export class CodeBlockExtractor {
   /* istanbul ignore next */
   private constructor () {}
 
-  static extract (markdownFilePath: string): Bluebird<string[]> {
-    return Bluebird.resolve()
+  static extract (markdownFilePath: string): Promise<string[]> {
+    return Promise.resolve()
       .then(() => CodeBlockExtractor.readFile(markdownFilePath))
       .then((contents) => CodeBlockExtractor.extractCodeBlocksFromMarkdown(contents))
       .catch((error) => {

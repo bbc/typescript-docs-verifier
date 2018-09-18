@@ -29,10 +29,11 @@ node_modules/compile-typescript-docs.js [--input-files <markdown-files-to-test>]
 ### TypeScript
 
 ```typescript
-import { SnippetCompiler, SnippetCompilationResult } from 'typescript-docs-verifier'
+import { compileSnippets, SnippetCompilationResult } from 'typescript-docs-verifier'
+import * as http from 'http'
 
 const inputFiles = ['README', 'examples.md'] // defaults for 'README.md' if not provided
-SnippetCompiler.compileSnippets(inputFiles)
+compileSnippets(inputFiles)
   .then((results: SnippetCompilationResult[]) => {
     results.forEach((result: SnippetCompilationResult) => {
       if (result.error) {

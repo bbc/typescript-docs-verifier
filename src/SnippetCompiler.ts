@@ -56,7 +56,8 @@ export class SnippetCompiler {
   }
 
   private extractFileCodeBlocks (file: string, importSubstituter: LocalImportSubstituter): Bluebird<CodeBlock[]> {
-    return CodeBlockExtractor.extract(file)
+    return Bluebird.resolve()
+      .then(() => CodeBlockExtractor.extract(file))
       .map((block: string) => {
         return {
           file,

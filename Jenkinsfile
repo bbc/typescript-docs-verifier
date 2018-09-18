@@ -21,7 +21,17 @@ pipeline {
         sh '''
           yarn install
           yarn test
-          node_modules/.bin/nsp check --output standard
+          yarn compile-docs
+        '''
+      }
+    }
+
+    stage('Check dependencies') {
+      steps {
+        sh '''
+          npm install
+          npm audit
+          rm package-lock.json
         '''
       }
     }

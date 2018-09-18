@@ -2,8 +2,8 @@ import * as path from 'path'
 import { PackageDefinition } from './PackageInfo'
 
 export class LocalImportSubstituter {
-  private packageName: string
-  private pathToPackageMain: string
+  private readonly packageName: string
+  private readonly pathToPackageMain: string
 
   constructor (packageDefinition: PackageDefinition) {
     this.packageName = packageDefinition.name

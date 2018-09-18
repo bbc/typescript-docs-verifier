@@ -1,4 +1,5 @@
 #! /usr/bin/env node
+
 import * as ora from 'ora'
 import * as chalk from 'chalk'
 import * as yargs from 'yargs'
@@ -6,7 +7,8 @@ import { TSError } from 'ts-node/dist/index'
 const leftPad = require('left-pad')
 import * as TypeScriptDocsVerifier from '../index'
 
-const ERROR_LINE_EXTRACTION_PATTERN = /\.ts\s+\((\d+),\d+\):/
+const ERROR_LINE_EXTRACTION_PATTERN = /\.ts\s*\((\d+),\d+\):/
+const COMPILED_DOCS_FILE_PREFIX_PATTERN = /compiled\-docs\/block\-\d+\.\d+\.ts/g
 
 yargs.option('input-files', {
   description: 'The list of input files to be processed',
@@ -34,7 +36,7 @@ const formatCode = (code: string, errorLines: number[]) => {
 }
 
 const findErrorLines = (error: TSError) => {
-  const messages = error.diagnostics.map((diagnostic) => diagnostic.message)
+  const messages = error.diagnosticText.split('\n')
   return messages.map((message: string) => {
     const match = ERROR_LINE_EXTRACTION_PATTERN.exec(message)
     if (match && match[1]) {
@@ -42,11 +44,13 @@ const findErrorLines = (error: TSError) => {
     } else {
       return NaN
     }
-  }).filter((lineNumber: string) => lineNumber)
-    .map((lineNumber: string) => parseInt(lineNumber, 10))
+  }).filter((lineNumber: string | number) => lineNumber)
+    .map((lineNumber: string | number) => parseInt(lineNumber.toString(), 10))
 }
 
-const formatError = (error: Error) => '  ' + error.message.split('\n').join('\n  ')
+const formatError = (error: Error) => '  ' + error.message.replace(COMPILED_DOCS_FILE_PREFIX_PATTERN, '')
+  .split('\n')
+  .join('\n      ')
 
 TypeScriptDocsVerifier.compileSnippets(inputFiles)
   .then((results) => {
