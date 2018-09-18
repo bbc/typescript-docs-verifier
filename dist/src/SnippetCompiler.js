@@ -38,7 +38,8 @@ class SnippetCompiler {
         });
     }
     extractFileCodeBlocks(file, importSubstituter) {
-        return CodeBlockExtractor_1.CodeBlockExtractor.extract(file)
+        return Bluebird.resolve()
+            .then(() => CodeBlockExtractor_1.CodeBlockExtractor.extract(file))
             .map((block) => {
             return {
                 file,

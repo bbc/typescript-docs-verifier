@@ -1,12 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const Bluebird = require("bluebird");
 const fsExtra = require("fs-extra");
 class CodeBlockExtractor {
     /* istanbul ignore next */
     constructor() { }
     static extract(markdownFilePath) {
-        return Bluebird.resolve()
+        return Promise.resolve()
             .then(() => CodeBlockExtractor.readFile(markdownFilePath))
             .then((contents) => CodeBlockExtractor.extractCodeBlocksFromMarkdown(contents))
             .catch((error) => {

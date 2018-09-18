@@ -1,4 +1,3 @@
-/// <reference types="bluebird" />
 import * as Bluebird from 'bluebird';
 import { TSError } from 'ts-node/dist/index';
 export interface SnippetCompilationResult {
@@ -12,9 +11,9 @@ export declare class SnippetCompiler {
     private readonly runner;
     constructor(workingDirectory: string);
     compileSnippets(documentationFiles: string[]): Bluebird<SnippetCompilationResult[]>;
-    private cleanWorkingDirectory();
-    private extractAllCodeBlocks(documentationFiles);
-    private extractFileCodeBlocks(file, importSubstituter);
-    private sanitiseCodeBlock(importSubstituter, block);
-    private testCodeCompilation(example, index);
+    private cleanWorkingDirectory;
+    private extractAllCodeBlocks;
+    private extractFileCodeBlocks;
+    private sanitiseCodeBlock;
+    private testCodeCompilation;
 }

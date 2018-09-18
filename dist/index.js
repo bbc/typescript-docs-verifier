@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const Bluebird = require("bluebird");
 const path = require("path");
 const SnippetCompiler_1 = require("./src/SnippetCompiler");
 const DEFAULT_FILES = ['README.md'];
@@ -16,7 +15,7 @@ const wrapIfString = (arrayOrString) => {
 function compileSnippets(markdownFileOrFiles = DEFAULT_FILES) {
     const workingDirectory = path.join(process.cwd(), COMPILED_DOCS_FOLDER);
     const compiler = new SnippetCompiler_1.SnippetCompiler(workingDirectory);
-    return Bluebird.resolve(markdownFileOrFiles)
+    return Promise.resolve(markdownFileOrFiles)
         .then(wrapIfString)
         .then((fileArray) => compiler.compileSnippets(fileArray));
 }

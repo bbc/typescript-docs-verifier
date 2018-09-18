@@ -6,7 +6,8 @@ const chalk = require("chalk");
 const yargs = require("yargs");
 const leftPad = require('left-pad');
 const TypeScriptDocsVerifier = require("../index");
-const ERROR_LINE_EXTRACTION_PATTERN = /\.ts\s+\((\d+),\d+\):/;
+const ERROR_LINE_EXTRACTION_PATTERN = /\.ts\s*\((\d+),\d+\):/;
+const COMPILED_DOCS_FILE_PREFIX_PATTERN = /compiled\-docs\/block\-\d+\.\d+\.ts/g;
 yargs.option('input-files', {
     description: 'The list of input files to be processed',
     array: true,
@@ -30,7 +31,7 @@ const formatCode = (code, errorLines) => {
     return '    ' + lines.join('\n    ');
 };
 const findErrorLines = (error) => {
-    const messages = error.diagnostics.map((diagnostic) => diagnostic.message);
+    const messages = error.diagnosticText.split('\n');
     return messages.map((message) => {
         const match = ERROR_LINE_EXTRACTION_PATTERN.exec(message);
         if (match && match[1]) {
@@ -40,9 +41,11 @@ const findErrorLines = (error) => {
             return NaN;
         }
     }).filter((lineNumber) => lineNumber)
-        .map((lineNumber) => parseInt(lineNumber, 10));
+        .map((lineNumber) => parseInt(lineNumber.toString(), 10));
 };
-const formatError = (error) => '  ' + error.message.split('\n').join('\n  ');
+const formatError = (error) => '  ' + error.message.replace(COMPILED_DOCS_FILE_PREFIX_PATTERN, '')
+    .split('\n')
+    .join('\n      ');
 TypeScriptDocsVerifier.compileSnippets(inputFiles)
     .then((results) => {
     spinner.info(`Found ${results.length} TypeScript snippets`).start();
