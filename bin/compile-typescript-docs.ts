@@ -77,4 +77,9 @@ TypeScriptDocsVerifier.compileSnippets(inputFiles)
   .catch((error) => {
     process.exitCode = 1
     console.error(error)
+    try {
+      spinner.fail()
+    } catch (error) {
+      console.error(error)
+    }
   })
