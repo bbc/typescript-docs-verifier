@@ -6,6 +6,8 @@ _Verifies that typescript examples in markdown files actually compile._
 
 Ever copied a TypeScript code example from a README and found that it didn't even compile? This tool can help by verifying that all of your code examples compile correctly.
 
+[[https://github.com/bbc/typescript-docs-verifier/blob/master/demo.gif|alt=demo]]
+
 Inspired the by the [tut](https://github.com/tpolecat/tut) documentation compilation tool for scala.
 
 ## How it works
