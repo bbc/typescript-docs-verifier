@@ -2,6 +2,9 @@
 
 _Verifies that typescript examples in markdown files actually compile._
 
+[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
+[![TypeScript](https://badges.frapsoft.com/typescript/code/typescript.svg?v=101)](https://github.com/ellerbrock/typescript-badges/)
+
 ## Why?
 
 Ever copied a TypeScript code example from a README and found that it didn't even compile? This tool can help by verifying that all of your code examples compile correctly.
