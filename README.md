@@ -96,6 +96,6 @@ See [these notes](./.github/CONTRIBUTING.md) for information for contributors.
 
 ## License
 
-`typescript-docs-verifier` is available to all via the [Apache-2.0](./APACHE-2.0) license.
+`typescript-docs-verifier` is available to all via the [Apache-2.0](./LICENSE) license.
 
 Copyright &copy; 2017 BBC
