@@ -1,10 +1,16 @@
 # `typescript-docs-verifier`
 
-_Verifies that typescript examples in a markdown file actually compile._
+_Verifies that typescript examples in markdown files actually compile._
 
-## What it is
+## Why?
 
-This library searches markdown files for blocks marked:
+Ever copied a TypeScript code example from a README and found that it didn't even compile? This tool can help by verifying that all of your code examples compile correctly.
+
+Inspired the by the [tut](https://github.com/tpolecat/tut) documentation compilation tool for scala.
+
+## How it works
+
+The selected markdown files are searched for `TypeScript` code blocks marked like this:
 
 ````Markdown
 ```typescript
@@ -12,7 +18,9 @@ This library searches markdown files for blocks marked:
 ```
 ````
 
-These code blocks are extracted and any imports from the current project are replaced with an import of the `main` file from `package.json`. Each code snippet is compiled (but not run) and any compilation errors are reported.
+These code blocks are extracted and any imports from the current project are replaced with an import of the `main` file from `package.json` (e.g. `import { compileSnippets } from 'typescript-docs-verifier'` would be replaced with `import { compileSnippets } from './dist/index'` for this project).
+
+Each code snippet is compiled (but not run) and any compilation errors are reported. Code snippets must compile independently from any other code snippets in the file.
 
 ## Script usage
 
@@ -32,7 +40,7 @@ node_modules/compile-typescript-docs.js [--input-files <markdown-files-to-test>]
 import { compileSnippets, SnippetCompilationResult } from 'typescript-docs-verifier'
 import * as http from 'http'
 
-const inputFiles = ['README', 'examples.md'] // defaults for 'README.md' if not provided
+const inputFiles = ['README', 'examples.md'] // defaults to 'README.md' if not provided
 compileSnippets(inputFiles)
   .then((results: SnippetCompilationResult[]) => {
     results.forEach((result: SnippetCompilationResult) => {
@@ -44,15 +52,18 @@ compileSnippets(inputFiles)
       }
     })
   })
+  .catch((error) => {
+    console.error('Error compiling TypeScript snippets', error)
+  })
 ```
 
 ### JavaScript
 
 ```javascript
-const TypeScriptDocsVerifier = require('typescript-docs-verifier')
+const { compileSnippets } = require('typescript-docs-verifier')
 
 const inputFiles = ['README.md', 'examples.md'] // defaults to 'README.md' if not provided
-TypeScriptDocsVerifier.compileSnippets(inputFiles)
+compileSnippets(inputFiles)
   .then((results) => {
     results.forEach((result) => {
       if (result.error) {
@@ -79,7 +90,7 @@ npm test
 
 ## Contributing
 
-See [these notes](./.github/CONTRIBUTING.md) for infomation for contributors.
+See [these notes](./.github/CONTRIBUTING.md) for information for contributors.
 
 ## License
 
