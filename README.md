@@ -2,12 +2,14 @@
 
 _Verifies that typescript examples in markdown files actually compile._
 
+[![TypeScript](https://img.shields.io/badge/%3C/%3E-TypeScript-blue.svg)](https://www.typescriptlang.org/)
 [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
-[![TypeScript](https://badges.frapsoft.com/typescript/code/typescript.svg?v=101)](https://github.com/ellerbrock/typescript-badges/)
+[![Apache 2.0](https://img.shields.io/hexpm/l/plug.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+[![TypeScript docs verifier](https://img.shields.io/badge/checked_with_%E2%9C%93-TypeScript_Docs_Verifier-blue.svg)](https://github.com/bbc/typescript-docs-verifier)
 
 ## Why?
 
-Ever copied a TypeScript code example from a README and found that it didn't even compile? This tool can help by verifying that all of your code examples compile correctly.
+Ever copied a TypeScript code example from a README and found that it didn't even compile? This tool can help by verifying that all of your code examples compile correctly. And yes, the TypeScript code samples in this `README` are checked using this tool.
 
 ![demo](demo.gif)
 
