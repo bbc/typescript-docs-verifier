@@ -5,7 +5,7 @@ _Verifies that typescript examples in markdown files actually compile._
 [![TypeScript](https://img.shields.io/badge/%3C/%3E-TypeScript-blue.svg)](https://www.typescriptlang.org/)
 [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 [![Apache 2.0](https://img.shields.io/hexpm/l/plug.svg)](https://www.apache.org/licenses/LICENSE-2.0)
-[![TypeScript docs verifier](https://img.shields.io/badge/checked_with_%E2%9C%93-TypeScript_Docs_Verifier-blue.svg)](https://github.com/bbc/typescript-docs-verifier)
+[![TypeScript docs verifier](https://img.shields.io/badge/checked_with_%E2%9C%93-TS_docs_verifier-blue.svg)](https://github.com/bbc/typescript-docs-verifier)
 
 ## Why?
 
