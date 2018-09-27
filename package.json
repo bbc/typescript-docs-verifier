@@ -3,14 +3,19 @@
   "description": "Randomised test property/data generation for NodeJS",
   "keywords": [
     "typescript",
+    "ts",
     "documentation",
+    "docs",
+    "doc",
     "compile",
     "compilation",
+    "build",
     "check",
     "code",
     "blocks",
     "generator",
-    "markdown"
+    "markdown",
+    "md"
   ],
   "version": "0.4.0",
   "main": "dist/index.js",
