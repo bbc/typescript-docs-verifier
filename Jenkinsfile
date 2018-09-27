@@ -21,7 +21,7 @@ pipeline {
         sh '''
           npm install
           npm test
-          npm compile-docs
+          npm run-script compile-docs
         '''
       }
     }
