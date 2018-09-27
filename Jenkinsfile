@@ -41,7 +41,7 @@ pipeline {
         sh '''
           sed -i /^dist$/d .gitignore
           rm -rf dist
-          npm build
+          npm run-script build
           git add --all dist
           git commit --allow-empty -m "Automated CI commit of compiled javascript"
           git push origin HEAD:master
