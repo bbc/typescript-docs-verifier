@@ -1,6 +1,6 @@
 {
   "name": "typescript-docs-verifier",
-  "description": "Randomised test property/data generation for NodeJS",
+  "description": "Verifies that typescript examples in markdown files actually compile.",
   "keywords": [
     "typescript",
     "ts",
@@ -17,7 +17,7 @@
     "markdown",
     "md"
   ],
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "dist/index.js",
   "bin": "./dist/bin/compile-typescript-docs.js",
   "license": "Apache-2.0",
