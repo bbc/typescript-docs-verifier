@@ -11,8 +11,17 @@ const CodeWrapper_1 = require("./CodeWrapper");
 class SnippetCompiler {
     constructor(workingDirectory) {
         this.workingDirectory = workingDirectory;
-        const configOptions = tsconfig.loadSync(process.cwd());
+        const configOptions = SnippetCompiler.loadTypeScriptConfig();
         this.runner = new TypeScriptRunner_1.TypeScriptRunner(this.workingDirectory, configOptions.config);
+    }
+    static loadTypeScriptConfig() {
+        const typeScriptConfig = tsconfig.loadSync(process.cwd());
+        if (typeScriptConfig &&
+            typeScriptConfig.config &&
+            typeScriptConfig.config.compilerOptions) {
+            typeScriptConfig.config.compilerOptions.noUnusedLocals = false;
+        }
+        return typeScriptConfig;
     }
     compileSnippets(documentationFiles) {
         return Bluebird.resolve()

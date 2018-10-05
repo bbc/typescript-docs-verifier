@@ -10,6 +10,7 @@ export declare class SnippetCompiler {
     private readonly workingDirectory;
     private readonly runner;
     constructor(workingDirectory: string);
+    private static loadTypeScriptConfig;
     compileSnippets(documentationFiles: string[]): Bluebird<SnippetCompilationResult[]>;
     private cleanWorkingDirectory;
     private extractAllCodeBlocks;

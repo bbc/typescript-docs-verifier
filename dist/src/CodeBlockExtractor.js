@@ -18,7 +18,7 @@ class CodeBlockExtractor {
     }
     static extractCodeBlocksFromMarkdown(markdown) {
         const codeBlocks = [];
-        markdown.replace(this.TYPESCRIPT_CODE_PATTERN, (fullMatch, code) => {
+        markdown.replace(this.TYPESCRIPT_CODE_PATTERN, (_, code) => {
             codeBlocks.push(code);
             return code;
         });
