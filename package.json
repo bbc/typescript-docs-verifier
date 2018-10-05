@@ -18,7 +18,7 @@
     "typescript",
     "verify"
   ],
-  "version": "1.0.1",
+  "version": "1.1.0",
   "main": "dist/index.js",
   "bin": "./dist/bin/compile-typescript-docs.js",
   "license": "Apache-2.0",

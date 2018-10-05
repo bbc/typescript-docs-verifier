@@ -25,8 +25,18 @@ export class SnippetCompiler {
   private readonly runner: TypeScriptRunner
 
   constructor (private readonly workingDirectory: string) {
-    const configOptions = tsconfig.loadSync(process.cwd())
+    const configOptions = SnippetCompiler.loadTypeScriptConfig()
     this.runner = new TypeScriptRunner(this.workingDirectory, configOptions.config)
+  }
+
+  private static loadTypeScriptConfig (): any {
+    const typeScriptConfig = tsconfig.loadSync(process.cwd())
+    if (typeScriptConfig &&
+        typeScriptConfig.config &&
+        typeScriptConfig.config.compilerOptions) {
+      typeScriptConfig.config.compilerOptions.noUnusedLocals = false
+    }
+    return typeScriptConfig
   }
 
   compileSnippets (documentationFiles: string[]): Bluebird<SnippetCompilationResult[]> {

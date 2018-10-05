@@ -22,7 +22,7 @@ export class CodeBlockExtractor {
 
   private static extractCodeBlocksFromMarkdown (markdown: string): string[] {
     const codeBlocks: string[] = []
-    markdown.replace(this.TYPESCRIPT_CODE_PATTERN, (fullMatch, code) => {
+    markdown.replace(this.TYPESCRIPT_CODE_PATTERN, (_, code) => {
       codeBlocks.push(code)
       return code
     })
