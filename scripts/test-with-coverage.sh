@@ -4,9 +4,11 @@ export JUNIT_REPORT_PATH=./test-reports/unittest/report.xml
 nyc \
   --all \
   --reporter text --reporter html \
-  --include "dist/src/**.js" \
-  --include "dist/index.js" \
   --report-dir "./test-reports/coverage" \
+  --exclude "test" \
+  --exclude "test-reports" \
+  --exclude "bin" \
+  --exclude "**/*.d.ts" \
   mocha \
     --require source-map-support/register \
     --timeout 10000 \

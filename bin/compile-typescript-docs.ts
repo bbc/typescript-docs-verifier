@@ -17,7 +17,7 @@ yargs.option('input-files', {
 })
 
 const argv = yargs.argv
-const inputFiles = argv['input-files']
+const inputFiles = argv['input-files'] as string[]
 
 const spinner = ora()
 spinner.info(`Compiling documentation TypeScript code snippets from ${inputFiles.join(', ')}`).start()
