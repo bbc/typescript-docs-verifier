@@ -35,7 +35,10 @@ const formatCode = (code: string, errorLines: number[]) => {
   return '    ' + lines.join('\n    ')
 }
 
-const findErrorLines = (error: TSError) => {
+const findErrorLines = (error: TSError | Error) => {
+  if (!('diagnosticText' in error)) {
+    return []
+  }
   const messages = error.diagnosticText.split('\n')
   return messages.map((message: string) => {
     const match = ERROR_LINE_EXTRACTION_PATTERN.exec(message)

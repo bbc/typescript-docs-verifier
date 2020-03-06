@@ -31,6 +31,9 @@ const formatCode = (code, errorLines) => {
     return '    ' + lines.join('\n    ');
 };
 const findErrorLines = (error) => {
+    if (!('diagnosticText' in error)) {
+        return [];
+    }
     const messages = error.diagnosticText.split('\n');
     return messages.map((message) => {
         const match = ERROR_LINE_EXTRACTION_PATTERN.exec(message);

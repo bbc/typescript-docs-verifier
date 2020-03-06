@@ -18,7 +18,7 @@ export interface SnippetCompilationResult {
   readonly file: string
   readonly index: number
   readonly snippet: string
-  readonly error?: TSError
+  readonly error?: TSError | Error
 }
 
 export class SnippetCompiler {
