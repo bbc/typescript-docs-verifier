@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.CodeBlockExtractor = void 0;
 const fsExtra = require("fs-extra");
 class CodeBlockExtractor {
     /* istanbul ignore next */

@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.PackageInfo = void 0;
 const path = require("path");
 const fsExtra = require("fs-extra");
 class PackageInfo {
