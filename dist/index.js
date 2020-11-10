@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.compileSnippets = void 0;
 const path = require("path");
 const SnippetCompiler_1 = require("./src/SnippetCompiler");
 const DEFAULT_FILES = ['README.md'];

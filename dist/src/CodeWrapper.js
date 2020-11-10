@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CodeWrapper = void 0;
 class CodeWrapper {
     /* istanbul ignore next */
     constructor() { }

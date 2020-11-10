@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LocalImportSubstituter = void 0;
 const path = require("path");
 class LocalImportSubstituter {
     constructor(packageDefinition) {

@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TypeScriptRunner = void 0;
 const path = require("path");
 const fsExtra = require("fs-extra");
 const TsNode = require("ts-node/dist/index");

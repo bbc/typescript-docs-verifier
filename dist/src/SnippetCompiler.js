@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SnippetCompiler = void 0;
 const tsconfig = require("tsconfig");
 const Bluebird = require("bluebird");
 const fsExtra = require("fs-extra");
