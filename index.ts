@@ -14,10 +14,9 @@ const wrapIfString = (arrayOrString: string[] | string) => {
   }
 }
 
-export function compileSnippets (markdownFileOrFiles: string | string[] = DEFAULT_FILES): Promise<SnippetCompilationResult[]> {
+export async function compileSnippets (markdownFileOrFiles: string | string[] = DEFAULT_FILES): Promise<SnippetCompilationResult[]> {
   const workingDirectory = path.join(process.cwd(), COMPILED_DOCS_FOLDER)
   const compiler = new SnippetCompiler(workingDirectory)
-  return Promise.resolve(markdownFileOrFiles)
-    .then(wrapIfString)
-    .then((fileArray) => compiler.compileSnippets(fileArray))
+  const fileArray = wrapIfString(markdownFileOrFiles)
+  return compiler.compileSnippets(fileArray)
 }

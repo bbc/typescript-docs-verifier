@@ -10,9 +10,9 @@ export class PackageInfo {
   /* istanbul ignore next */
   private constructor () {}
 
-  static read (): Promise<PackageDefinition> {
+  static async read (): Promise<PackageDefinition> {
     const packageJsonPath = path.join(process.cwd(), 'package.json')
-    return fsExtra.readFile(packageJsonPath)
-      .then((contents) => JSON.parse(contents.toString()))
+    const contents = await fsExtra.readFile(packageJsonPath, 'utf-8')
+    return JSON.parse(contents)
   }
 }

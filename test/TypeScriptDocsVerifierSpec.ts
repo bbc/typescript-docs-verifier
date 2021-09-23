@@ -37,7 +37,7 @@ const defaultTsConfig = {
     noImplicitThis: true,
     alwaysStrict: true,
     noImplicitReturns: true,
-    typeRoots: [path.join(__dirname, '..', '..', 'node_modules', '@types')]
+    typeRoots: [path.join(workingDirectory, 'node_modules', '@types')]
   },
   exclude: [ 'node_modules', 'example' ]
 }
@@ -54,14 +54,7 @@ type ProjectFiles = {
   readonly tsConfig?: string
 }
 
-const defaultProjectFiles = {
-  packageJson: defaultPackageJson,
-  markdownFiles: [defaultMarkdownFile],
-  mainFile: defaultMainFile,
-  tsConfig: JSON.stringify(defaultTsConfig)
-}
-
-const createProject = (files: ProjectFiles = defaultProjectFiles) => {
+const createProject = async (files: ProjectFiles = {}) => {
   const filesToWrite: File[] = [{
     name: 'package.json',
     contents: JSON.stringify((files.packageJson || defaultPackageJson))
@@ -73,10 +66,15 @@ const createProject = (files: ProjectFiles = defaultProjectFiles) => {
     contents: files.tsConfig || JSON.stringify(defaultTsConfig)
   }]
 
-  const allFiles = filesToWrite.concat(files.markdownFiles || [])
-  return Promise.all(
+  const allFiles = filesToWrite.concat(files.markdownFiles || [defaultMarkdownFile])
+  await Promise.all(
     allFiles.map((file: File) => FsExtra.writeFile(path.join(workingDirectory, file.name), file.contents))
   )
+
+  const nodeTypesFolder = path.join(__dirname, '..', '..', 'node_modules', '@types', 'node')
+  const targetTypesFolder = path.join(workingDirectory, 'node_modules', '@types')
+  await FsExtra.ensureDir(targetTypesFolder)
+  await FsExtra.copy(nodeTypesFolder, path.join(targetTypesFolder, 'node'))
 }
 
 const genSnippet = () => {
@@ -92,20 +90,21 @@ ${snippet}\`\`\``
 
 describe('TypeScriptDocsVerifier', () => {
   describe('compileSnippets', () => {
-    beforeEach(() => {
-      return FsExtra.ensureDir(path.join(workingDirectory))
-        .then(() => process.chdir(workingDirectory))
+    beforeEach(async () => {
+      await FsExtra.ensureDir(path.join(workingDirectory))
+      process.chdir(workingDirectory)
     })
 
-    afterEach(() => FsExtra.remove(workingDirectory))
-
-    verify.it('returns an empty array if no code snippets are present', () => {
-      return createProject()
-        .then(() => TypeScriptDocsVerifier.compileSnippets())
-        .should.eventually.eql([])
+    afterEach(async () => {
+      await FsExtra.remove(workingDirectory)
     })
 
-    verify.it('returns an empty array if no typescript code snippets are present', Gen.array(Gen.string, 4), (strings) => {
+    verify.it('returns an empty array if no code snippets are present', async () => {
+      await createProject()
+      return TypeScriptDocsVerifier.compileSnippets().should.eventually.eql([])
+    })
+
+    verify.it('returns an empty array if no typescript code snippets are present', Gen.array(Gen.string, 4), async (strings) => {
       const noTypeScriptMarkdown = `
 # A \`README.md\` file
 
@@ -121,23 +120,23 @@ ${strings[2]}
 ${strings[3]}
 \`\`\``
 
-      return createProject({ markdownFiles: [{ name: 'README.md', contents: noTypeScriptMarkdown }] })
-        .then(() => TypeScriptDocsVerifier.compileSnippets())
+      await createProject({ markdownFiles: [{ name: 'README.md', contents: noTypeScriptMarkdown }] })
+      return TypeScriptDocsVerifier.compileSnippets()
         .should.eventually.eql([])
     })
 
-    verify.it('returns an error if a documentation file does not exist', Gen.string, (filename) => {
-      return createProject()
-        .then(() => TypeScriptDocsVerifier.compileSnippets(['README.md', filename]))
+    verify.it('returns an error if a documentation file does not exist', Gen.string, async (filename) => {
+      await createProject()
+      return TypeScriptDocsVerifier.compileSnippets(['README.md', filename])
         .should.be.rejectedWith(filename)
     })
 
     verify.it(
       'returns a single element result array when a valid typescript block is supplied',
-      genSnippet, Gen.string, (snippet, fileName) => {
+      genSnippet, Gen.string, async (snippet, fileName) => {
         const typeScriptMarkdown = wrapSnippet(snippet)
-        return createProject({ markdownFiles: [{ name: fileName, contents: typeScriptMarkdown }] })
-          .then(() => TypeScriptDocsVerifier.compileSnippets(fileName))
+        await createProject({ markdownFiles: [{ name: fileName, contents: typeScriptMarkdown }] })
+        return TypeScriptDocsVerifier.compileSnippets(fileName)
           .should.eventually.eql([{
             file: fileName,
             index: 1,
@@ -148,7 +147,7 @@ ${strings[3]}
 
     verify.it(
       'compiles snippets from multiple files',
-      Gen.distinct(genSnippet, 3), Gen.distinct(Gen.string, 3), (snippets, fileNames) => {
+      Gen.distinct(genSnippet, 3), Gen.distinct(Gen.string, 3), async (snippets, fileNames) => {
         const markdownFiles = snippets.map((snippet, index) => {
           return {
             name: fileNames[index],
@@ -164,17 +163,17 @@ ${strings[3]}
           }
         })
 
-        return createProject({ markdownFiles: markdownFiles })
-          .then(() => TypeScriptDocsVerifier.compileSnippets(fileNames))
+        await createProject({ markdownFiles: markdownFiles })
+        return TypeScriptDocsVerifier.compileSnippets(fileNames)
           .should.eventually.eql(expected)
       }
     )
 
-    verify.it('reads from README.md if no file paths are supplied', genSnippet, (snippet) => {
+    verify.it('reads from README.md if no file paths are supplied', genSnippet, async (snippet) => {
       const typeScriptMarkdown = wrapSnippet(snippet)
 
-      return createProject({ markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }] })
-        .then(() => TypeScriptDocsVerifier.compileSnippets())
+      await createProject({ markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }] })
+      return TypeScriptDocsVerifier.compileSnippets()
         .should.eventually.eql([{
           file: 'README.md',
           index: 1,
@@ -182,17 +181,17 @@ ${strings[3]}
         }])
     })
 
-    verify.it('returns an empty array if an empty array is provided', genSnippet, (snippet) => {
+    verify.it('returns an empty array if an empty array is provided', genSnippet, async (snippet) => {
       const typeScriptMarkdown = wrapSnippet(snippet)
 
-      return createProject({ markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }] })
-        .then(() => TypeScriptDocsVerifier.compileSnippets([]))
+      await createProject({ markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }] })
+      return TypeScriptDocsVerifier.compileSnippets([])
         .should.eventually.eql([])
     })
 
     verify.it(
       'returns multiple results when multiple TypeScript snippets are supplied',
-      Gen.array(genSnippet, Gen.integerBetween(2, 6)()), (snippets) => {
+      Gen.array(genSnippet, Gen.integerBetween(2, 6)()), async (snippets) => {
         const markdownBlocks = snippets.map(wrapSnippet)
         const markdown = markdownBlocks.join('\n')
         const expected = snippets.map((snippet, index) => {
@@ -203,21 +202,21 @@ ${strings[3]}
           }
         })
 
-        return createProject({ markdownFiles: [{ name: 'README.md', contents: markdown }] })
-          .then(() => TypeScriptDocsVerifier.compileSnippets())
+        await createProject({ markdownFiles: [{ name: 'README.md', contents: markdown }] })
+        return () => TypeScriptDocsVerifier.compileSnippets()
           .should.eventually.eql(expected)
       }
     )
 
     verify.it(
       'compiles snippets with import statements',
-      genSnippet, (snippet) => {
+      genSnippet, async (snippet) => {
         snippet = `import * as path from 'path'
           path.join('.', 'some-path')
           ${snippet}`
         const typeScriptMarkdown = wrapSnippet(snippet)
-        return createProject({ markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }] })
-          .then(() => TypeScriptDocsVerifier.compileSnippets())
+        await createProject({ markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }] })
+        return TypeScriptDocsVerifier.compileSnippets()
           .should.eventually.eql([{
             file: 'README.md',
             index: 1,
@@ -228,12 +227,12 @@ ${strings[3]}
 
     verify.it(
       'reports compilation failures',
-      genSnippet, Gen.string, (validSnippet, invalidSnippet) => {
+      genSnippet, Gen.string, async (validSnippet, invalidSnippet) => {
         const validTypeScriptMarkdown = wrapSnippet(validSnippet)
         const invalidTypeScriptMarkdown = wrapSnippet(invalidSnippet)
         const markdown = [validTypeScriptMarkdown, invalidTypeScriptMarkdown].join('\n')
-        return createProject({ markdownFiles: [{ name: 'README.md', contents: markdown }] })
-        .then(() => TypeScriptDocsVerifier.compileSnippets())
+        await createProject({ markdownFiles: [{ name: 'README.md', contents: markdown }] })
+        return TypeScriptDocsVerifier.compileSnippets()
         .should.eventually.satisfy((results: any[]) => {
           results.should.have.length(2)
           results[0].should.not.have.property('error')
@@ -248,7 +247,7 @@ ${strings[3]}
     )
 
     verify.it(
-      'localises imports of the current package if the package main is a ts file', () => {
+      'localises imports of the current package if the package main is a ts file', async () => {
         const snippet = `
           import { MyClass } from '${defaultPackageJson.name}'
           const instance = new MyClass()
@@ -263,8 +262,8 @@ ${strings[3]}
             }`
         }
         const typeScriptMarkdown = wrapSnippet(snippet)
-        return createProject({ markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }], mainFile })
-          .then(() => TypeScriptDocsVerifier.compileSnippets())
+        await createProject({ markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }], mainFile })
+        return TypeScriptDocsVerifier.compileSnippets()
           .should.eventually.eql([{
             file: 'README.md',
             index: 1,
@@ -274,7 +273,7 @@ ${strings[3]}
     )
 
     verify.it(
-      'localises imports of the current package if the package main is a js file', Gen.string, Gen.string, (name, main) => {
+      'localises imports of the current package if the package main is a js file', Gen.string, Gen.string, async (name, main) => {
         const packageJson: PackageDefinition = {
           name,
           main: `${main}.js`
@@ -298,8 +297,8 @@ ${strings[3]}
           mainFile,
           packageJson
         }
-        return createProject(projectFiles)
-          .then(() => TypeScriptDocsVerifier.compileSnippets())
+        await createProject(projectFiles)
+        return TypeScriptDocsVerifier.compileSnippets()
           .should.eventually.eql([{
             file: 'README.md',
             index: 1,

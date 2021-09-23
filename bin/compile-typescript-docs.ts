@@ -3,7 +3,7 @@
 import * as ora from 'ora'
 import * as chalk from 'chalk'
 import * as yargs from 'yargs'
-import { TSError } from 'ts-node/dist/index'
+import { TSError } from 'ts-node'
 import * as leftPad from 'left-pad'
 import * as TypeScriptDocsVerifier from '../index'
 
@@ -55,28 +55,28 @@ const formatError = (error: Error) => '  ' + error.message.replace(COMPILED_DOCS
   .split('\n')
   .join('\n      ')
 
-TypeScriptDocsVerifier.compileSnippets(inputFiles)
-  .then((results) => {
-    spinner.info(`Found ${results.length} TypeScript snippets`).start()
-    results.forEach((result) => {
-      if (result.error) {
-        const errorLines = findErrorLines(result.error)
-        process.exitCode = 1
-        spinner.fail((chalk as any)`{red.bold Error compiling example code block ${result.index} in file ${result.file}:}`)
-        console.log(formatError(result.error))
-        console.log()
-        console.log((chalk as any)`{blue.bold  Original code:}`)
-        console.log(formatCode(result.snippet, errorLines))
-      }
-    })
-  })
-  .then(() => {
-    if (process.exitCode) {
-      spinner.fail((chalk as any)`{red.bold Compilation failed, see above errors}`)
-    } else {
-      spinner.succeed((chalk as any)`{green.bold All snippets compiled OK}`)
+const doCompilation = async () => {
+  const results = await TypeScriptDocsVerifier.compileSnippets(inputFiles)
+  spinner.info(`Found ${results.length} TypeScript snippets`).start()
+  results.forEach((result) => {
+    if (result.error) {
+      const errorLines = findErrorLines(result.error)
+      process.exitCode = 1
+      spinner.fail((chalk as any)`{red.bold Error compiling example code block ${result.index} in file ${result.file}:}`)
+      console.log(formatError(result.error))
+      console.log()
+      console.log((chalk as any)`{blue.bold  Original code:}`)
+      console.log(formatCode(result.snippet, errorLines))
     }
   })
+  if (process.exitCode) {
+    spinner.fail((chalk as any)`{red.bold Compilation failed, see above errors}`)
+  } else {
+    spinner.succeed((chalk as any)`{green.bold All snippets compiled OK}`)
+  }
+}
+
+doCompilation()
   .catch((error) => {
     process.exitCode = 1
     console.error(error)
