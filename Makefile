@@ -13,7 +13,7 @@ tag-release:
 	@mv ${PACKAGE_FILE_NAME} .git/
 	@git switch release
 	@git rm -rf . || echo 'No files to delete'
-	@git clean -fdX
+	@git clean -fd
 	@mv ./.git/$(PACKAGE_FILE_NAME) .
 	@tar -zxf $(PACKAGE_FILE_NAME)
 	@rm $(PACKAGE_FILE_NAME)
