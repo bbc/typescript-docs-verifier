@@ -9,6 +9,7 @@ tag-release:
 	@echo "Packaging $(VERSION) of $(PACKAGE_NAME)"
 	@tput sgr0
 	@git fetch --all
+	@npm run prepublishOnly
 	@npm pack
 	@mv ${PACKAGE_FILE_NAME} .git/
 	@git switch release
