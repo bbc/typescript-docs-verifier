@@ -49,8 +49,8 @@ const findErrorLines = (error) => {
 const formatError = (error) => '  ' + error.message.replace(COMPILED_DOCS_FILE_PREFIX_PATTERN, '')
     .split('\n')
     .join('\n      ');
-TypeScriptDocsVerifier.compileSnippets(inputFiles)
-    .then((results) => {
+const doCompilation = async () => {
+    const results = await TypeScriptDocsVerifier.compileSnippets(inputFiles);
     spinner.info(`Found ${results.length} TypeScript snippets`).start();
     results.forEach((result) => {
         if (result.error) {
@@ -63,15 +63,14 @@ TypeScriptDocsVerifier.compileSnippets(inputFiles)
             console.log(formatCode(result.snippet, errorLines));
         }
     });
-})
-    .then(() => {
     if (process.exitCode) {
         spinner.fail(chalk `{red.bold Compilation failed, see above errors}`);
     }
     else {
         spinner.succeed(chalk `{green.bold All snippets compiled OK}`);
     }
-})
+};
+doCompilation()
     .catch((error) => {
     process.exitCode = 1;
     console.error(error);

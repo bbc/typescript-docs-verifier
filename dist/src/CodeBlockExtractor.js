@@ -1,20 +1,21 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.CodeBlockExtractor = void 0;
 const fsExtra = require("fs-extra");
 class CodeBlockExtractor {
     /* istanbul ignore next */
     constructor() { }
-    static extract(markdownFilePath) {
-        return Promise.resolve()
-            .then(() => CodeBlockExtractor.readFile(markdownFilePath))
-            .then((contents) => CodeBlockExtractor.extractCodeBlocksFromMarkdown(contents))
-            .catch((error) => {
-            throw new Error(`Error extracting code blocks from ${markdownFilePath}: ${error.message}`);
-        });
+    static async extract(markdownFilePath) {
+        try {
+            const contents = await CodeBlockExtractor.readFile(markdownFilePath);
+            return CodeBlockExtractor.extractCodeBlocksFromMarkdown(contents);
+        }
+        catch (error) {
+            throw new Error(`Error extracting code blocks from ${markdownFilePath}: ${error instanceof Error ? error.message : error}`);
+        }
     }
-    static readFile(path) {
-        return fsExtra.readFile(path)
-            .then((buffer) => buffer.toString());
+    static async readFile(path) {
+        return fsExtra.readFile(path, 'utf-8');
     }
     static extractCodeBlocksFromMarkdown(markdown) {
         const codeBlocks = [];

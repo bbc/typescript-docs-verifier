@@ -1,5 +1,4 @@
-import * as Bluebird from 'bluebird';
-import { TSError } from 'ts-node/dist/index';
+import { TSError } from 'ts-node';
 export interface SnippetCompilationResult {
     readonly file: string;
     readonly index: number;
@@ -11,7 +10,7 @@ export declare class SnippetCompiler {
     private readonly runner;
     constructor(workingDirectory: string);
     private static loadTypeScriptConfig;
-    compileSnippets(documentationFiles: string[]): Bluebird<SnippetCompilationResult[]>;
+    compileSnippets(documentationFiles: string[]): Promise<SnippetCompilationResult[]>;
     private cleanWorkingDirectory;
     private extractAllCodeBlocks;
     private extractFileCodeBlocks;

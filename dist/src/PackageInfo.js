@@ -1,14 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.PackageInfo = void 0;
 const path = require("path");
 const fsExtra = require("fs-extra");
 class PackageInfo {
     /* istanbul ignore next */
     constructor() { }
-    static read() {
+    static async read() {
         const packageJsonPath = path.join(process.cwd(), 'package.json');
-        return fsExtra.readFile(packageJsonPath)
-            .then((contents) => JSON.parse(contents.toString()));
+        const contents = await fsExtra.readFile(packageJsonPath, 'utf-8');
+        return JSON.parse(contents);
     }
 }
 exports.PackageInfo = PackageInfo;

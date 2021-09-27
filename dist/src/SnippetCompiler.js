@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.SnippetCompiler = void 0;
 const tsconfig = require("tsconfig");
-const Bluebird = require("bluebird");
 const fsExtra = require("fs-extra");
 const TypeScriptRunner_1 = require("./TypeScriptRunner");
 const PackageInfo_1 = require("./PackageInfo");
@@ -23,33 +23,29 @@ class SnippetCompiler {
         }
         return typeScriptConfig;
     }
-    compileSnippets(documentationFiles) {
-        return Bluebird.resolve()
-            .then(() => this.cleanWorkingDirectory())
-            .then(() => fsExtra.ensureDir(this.workingDirectory))
-            .then(() => this.extractAllCodeBlocks(documentationFiles))
-            .map((example, index) => this.testCodeCompilation(example, index))
-            .finally(() => this.cleanWorkingDirectory());
+    async compileSnippets(documentationFiles) {
+        try {
+            await this.cleanWorkingDirectory();
+            await fsExtra.ensureDir(this.workingDirectory);
+            const examples = await this.extractAllCodeBlocks(documentationFiles);
+            return await Promise.all(examples.map(async (example, index) => this.testCodeCompilation(example, index)));
+        }
+        finally {
+            await this.cleanWorkingDirectory();
+        }
     }
     cleanWorkingDirectory() {
         return fsExtra.remove(this.workingDirectory);
     }
-    extractAllCodeBlocks(documentationFiles) {
-        return Bluebird.resolve()
-            .then(() => PackageInfo_1.PackageInfo.read())
-            .then((packageDefn) => new LocalImportSubstituter_1.LocalImportSubstituter(packageDefn))
-            .then((importSubstituter) => {
-            return Bluebird.all(documentationFiles)
-                .map((file) => this.extractFileCodeBlocks(file, importSubstituter))
-                .reduce((previous, current) => {
-                return previous.concat(current);
-            }, []);
-        });
+    async extractAllCodeBlocks(documentationFiles) {
+        const packageDefn = await PackageInfo_1.PackageInfo.read();
+        const importSubstituter = new LocalImportSubstituter_1.LocalImportSubstituter(packageDefn);
+        const codeBlocks = await Promise.all(documentationFiles.map((file) => this.extractFileCodeBlocks(file, importSubstituter)));
+        return codeBlocks.flat();
     }
-    extractFileCodeBlocks(file, importSubstituter) {
-        return Bluebird.resolve()
-            .then(() => CodeBlockExtractor_1.CodeBlockExtractor.extract(file))
-            .map((block) => {
+    async extractFileCodeBlocks(file, importSubstituter) {
+        const blocks = await CodeBlockExtractor_1.CodeBlockExtractor.extract(file);
+        return blocks.map((block) => {
             return {
                 file,
                 snippet: block,
@@ -61,23 +57,24 @@ class SnippetCompiler {
         const localisedBlock = importSubstituter.substituteLocalPackageImports(block);
         return CodeWrapper_1.CodeWrapper.wrap(localisedBlock);
     }
-    testCodeCompilation(example, index) {
-        return this.runner.run(example.sanitisedCode)
-            .then(() => {
+    async testCodeCompilation(example, index) {
+        try {
+            await this.runner.run(example.sanitisedCode);
             return {
                 snippet: example.snippet,
                 file: example.file,
                 index: index + 1
             };
-        })
-            .catch((error) => {
+        }
+        catch (error) {
+            const wrappedError = error instanceof Error ? error : new Error(String(error));
             return {
                 snippet: example.snippet,
-                error,
+                error: wrappedError,
                 file: example.file,
                 index: index + 1
             };
-        });
+        }
     }
 }
 exports.SnippetCompiler = SnippetCompiler;

@@ -1,25 +1,24 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.TypeScriptRunner = void 0;
 const path = require("path");
 const fsExtra = require("fs-extra");
-const TsNode = require("ts-node/dist/index");
+const TsNode = require("ts-node");
 class TypeScriptRunner {
     constructor(workingDirectory, typeScriptOptions) {
         this.workingDirectory = workingDirectory;
         TsNode.register(typeScriptOptions);
+        this.compiler = TsNode.create(typeScriptOptions);
     }
-    run(code) {
-        return Promise.resolve()
-            .then(() => this.writeCodeFile(code))
-            .then((codeFile) => {
-            require(codeFile);
-        });
+    async run(code) {
+        const codeFile = await this.writeCodeFile(code);
+        this.compiler.compile(code, codeFile);
     }
-    writeCodeFile(code) {
-        const id = Math.random();
+    async writeCodeFile(code) {
+        const id = process.hrtime.bigint().toString();
         const codeFile = path.join(this.workingDirectory, `block-${id}.ts`);
-        return fsExtra.writeFile(codeFile, code)
-            .then(() => codeFile);
+        await fsExtra.writeFile(codeFile, code);
+        return codeFile;
     }
 }
 exports.TypeScriptRunner = TypeScriptRunner;

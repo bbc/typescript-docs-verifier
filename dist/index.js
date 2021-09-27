@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.compileSnippets = void 0;
 const path = require("path");
 const SnippetCompiler_1 = require("./src/SnippetCompiler");
 const DEFAULT_FILES = ['README.md'];
@@ -12,12 +13,11 @@ const wrapIfString = (arrayOrString) => {
         return [arrayOrString];
     }
 };
-function compileSnippets(markdownFileOrFiles = DEFAULT_FILES) {
+async function compileSnippets(markdownFileOrFiles = DEFAULT_FILES) {
     const workingDirectory = path.join(process.cwd(), COMPILED_DOCS_FOLDER);
     const compiler = new SnippetCompiler_1.SnippetCompiler(workingDirectory);
-    return Promise.resolve(markdownFileOrFiles)
-        .then(wrapIfString)
-        .then((fileArray) => compiler.compileSnippets(fileArray));
+    const fileArray = wrapIfString(markdownFileOrFiles);
+    return compiler.compileSnippets(fileArray);
 }
 exports.compileSnippets = compileSnippets;
 //# sourceMappingURL=index.js.map
