@@ -4,7 +4,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const ora = require("ora");
 const chalk = require("chalk");
 const yargs = require("yargs");
-const leftPad = require("left-pad");
 const TypeScriptDocsVerifier = require("../index");
 const ERROR_LINE_EXTRACTION_PATTERN = /\.ts\s*\((\d+),\d+\):/;
 const COMPILED_DOCS_FILE_PREFIX_PATTERN = /compiled\-docs\/block\-\d+\.\d+\.ts/g;
@@ -22,10 +21,10 @@ const formatCode = (code, errorLines) => {
         .map((line, index) => {
         const lineNumber = index + 1;
         if (errorLines.indexOf(lineNumber) !== -1) {
-            return chalk `{bold.red ${leftPad(lineNumber, 2)}| ${line}}`;
+            return chalk `{bold.red ${String(lineNumber).padStart(2)}| ${line}}`;
         }
         else {
-            return `${leftPad(lineNumber, 2)}| ${line}`;
+            return `${String(lineNumber).padStart(2)}| ${line}`;
         }
     });
     return '    ' + lines.join('\n    ');
