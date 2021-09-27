@@ -27,5 +27,5 @@ class CodeBlockExtractor {
     }
 }
 exports.CodeBlockExtractor = CodeBlockExtractor;
-CodeBlockExtractor.TYPESCRIPT_CODE_PATTERN = /(?:```typescript\n)((?:\n|.)*?)(?:(?=```))/gi;
+CodeBlockExtractor.TYPESCRIPT_CODE_PATTERN = /(?:```(?:(?:typescript)|(?:ts))\n)((?:\n|.)*?)(?:(?=```))/gi;
 //# sourceMappingURL=CodeBlockExtractor.js.map

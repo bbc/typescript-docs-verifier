@@ -33,7 +33,7 @@
   },
   "homepage": "https://github.com/bbc/typescript-docs-verifier#readme",
   "engines": {
-    "node": ">12"
+    "node": ">=12"
   },
   "scripts": {
     "pretest": "npm run-script build",
@@ -75,7 +75,7 @@
     "yargs": "^16.1.0"
   },
   "peerDependencies": {
-    "typescript": ">3.8.3 <=4"
+    "typescript": ">3.8.3"
   },
   "files": [
     "dist/index.js",
