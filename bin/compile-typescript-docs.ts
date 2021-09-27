@@ -4,7 +4,6 @@ import * as ora from 'ora'
 import * as chalk from 'chalk'
 import * as yargs from 'yargs'
 import { TSError } from 'ts-node'
-import * as leftPad from 'left-pad'
 import * as TypeScriptDocsVerifier from '../index'
 
 const ERROR_LINE_EXTRACTION_PATTERN = /\.ts\s*\((\d+),\d+\):/
@@ -27,9 +26,9 @@ const formatCode = (code: string, errorLines: number[]) => {
     .map((line, index) => {
       const lineNumber = index + 1
       if (errorLines.indexOf(lineNumber) !== -1) {
-        return (chalk as any)`{bold.red ${leftPad(lineNumber, 2)}| ${line}}`
+        return (chalk as any)`{bold.red ${String(lineNumber).padStart(2)}| ${line}}`
       } else {
-        return `${leftPad(lineNumber, 2)}| ${line}`
+        return `${String(lineNumber).padStart(2)}| ${line}`
       }
     })
   return '    ' + lines.join('\n    ')
