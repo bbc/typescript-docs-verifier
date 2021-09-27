@@ -1,7 +1,7 @@
 import * as fsExtra from 'fs-extra'
 
 export class CodeBlockExtractor {
-  static readonly TYPESCRIPT_CODE_PATTERN = /(?:```typescript\n)((?:\n|.)*?)(?:(?=```))/gi
+  static readonly TYPESCRIPT_CODE_PATTERN = /(?:```(?:(?:typescript)|(?:ts))\n)((?:\n|.)*?)(?:(?=```))/gi
 
   /* istanbul ignore next */
   private constructor () {}

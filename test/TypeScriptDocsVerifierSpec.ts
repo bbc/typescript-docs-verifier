@@ -83,8 +83,8 @@ const genSnippet = () => {
   return `const ${name} = "${value}"`
 }
 
-const wrapSnippet = (snippet: string) => {
-  return `\`\`\`typescript
+const wrapSnippet = (snippet: string, snippetType: string = 'typescript') => {
+  return `\`\`\`${snippetType}
 ${snippet}\`\`\``
 }
 
@@ -110,15 +110,12 @@ describe('TypeScriptDocsVerifier', () => {
 
 ${strings[0]}
 
-\`\`\`javascript
-${strings[1]}
-\`\`\`
+${wrapSnippet(strings[1], 'javascript')}
 
 ${strings[2]}
 
-\`\`\`bash
-${strings[3]}
-\`\`\``
+${wrapSnippet(strings[3], 'bash')}
+`
 
       await createProject({ markdownFiles: [{ name: 'README.md', contents: noTypeScriptMarkdown }] })
       return TypeScriptDocsVerifier.compileSnippets()
@@ -132,9 +129,23 @@ ${strings[3]}
     })
 
     verify.it(
-      'returns a single element result array when a valid typescript block is supplied',
+      'returns a single element result array when a valid typescript block marked "typescript" is supplied',
       genSnippet, Gen.string, async (snippet, fileName) => {
         const typeScriptMarkdown = wrapSnippet(snippet)
+        await createProject({ markdownFiles: [{ name: fileName, contents: typeScriptMarkdown }] })
+        return TypeScriptDocsVerifier.compileSnippets(fileName)
+          .should.eventually.eql([{
+            file: fileName,
+            index: 1,
+            snippet
+          }])
+      }
+    )
+
+    verify.it(
+      'returns a single element result array when a valid typescript block marked "ts" is supplied',
+      genSnippet, Gen.string, async (snippet, fileName) => {
+        const typeScriptMarkdown = wrapSnippet(snippet, 'ts')
         await createProject({ markdownFiles: [{ name: fileName, contents: typeScriptMarkdown }] })
         return TypeScriptDocsVerifier.compileSnippets(fileName)
           .should.eventually.eql([{
@@ -192,7 +203,7 @@ ${strings[3]}
     verify.it(
       'returns multiple results when multiple TypeScript snippets are supplied',
       Gen.array(genSnippet, Gen.integerBetween(2, 6)()), async (snippets) => {
-        const markdownBlocks = snippets.map(wrapSnippet)
+        const markdownBlocks = snippets.map((snippet) => wrapSnippet(snippet))
         const markdown = markdownBlocks.join('\n')
         const expected = snippets.map((snippet, index) => {
           return {
