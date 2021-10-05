@@ -1,5 +1,6 @@
 import * as fsExtra from 'fs-extra'
 
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class CodeBlockExtractor {
   static readonly TYPESCRIPT_CODE_PATTERN = /(?:```(?:(?:typescript)|(?:ts))\n)((?:\n|.)*?)(?:(?=```))/gi
 
@@ -16,7 +17,7 @@ export class CodeBlockExtractor {
   }
 
   private static async readFile (path: string): Promise<string> {
-    return fsExtra.readFile(path, 'utf-8')
+    return await fsExtra.readFile(path, 'utf-8')
   }
 
   private static extractCodeBlocksFromMarkdown (markdown: string): string[] {

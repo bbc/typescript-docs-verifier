@@ -1,0 +1,26 @@
+{
+  "extends": ["standard-with-typescript"],
+  "plugins": ["functional", "import", "node", "promise"],
+  "rules": {
+    "@typescript-eslint/strict-boolean-expressions": 0,
+    "@typescript-eslint/explicit-function-return-type": 0,
+    "@typescript-eslint/restrict-template-expressions": 0,
+    "@typescript-eslint/consistent-type-definitions": [2, "type"],
+    "functional/no-let": 2,
+    "@typescript-eslint/ban-types": [
+      2,
+      {
+        "types": {
+          "String": "Use string instead.",
+          "Number": "User number instead.",
+          "Boolean": "Use boolean instead.",
+          "Object": "User object instead."
+        }
+      }
+    ]
+  },
+  "parserOptions": {
+    "project": "tsconfig.json"
+  },
+  "ignorePatterns": ["dist"]
+}

@@ -1,11 +1,12 @@
 import * as path from 'path'
 import * as fsExtra from 'fs-extra'
 
-export interface PackageDefinition {
+export type PackageDefinition = {
   readonly name: string
   readonly main: string
 }
 
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class PackageInfo {
   /* istanbul ignore next */
   private constructor () {}

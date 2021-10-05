@@ -18,5 +18,5 @@ export async function compileSnippets (markdownFileOrFiles: string | string[] = 
   const workingDirectory = path.join(process.cwd(), COMPILED_DOCS_FOLDER)
   const compiler = new SnippetCompiler(workingDirectory)
   const fileArray = wrapIfString(markdownFileOrFiles)
-  return compiler.compileSnippets(fileArray)
+  return await compiler.compileSnippets(fileArray)
 }
