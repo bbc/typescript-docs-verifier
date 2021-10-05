@@ -35,7 +35,7 @@ Each code snippet is compiled (but not run) and any compilation errors are repor
 ## Script usage
 
 ```bash
-node_modules/compile-typescript-docs.js [--input-files <markdown-files-to-test>]
+node_modules/.bin/typescript-docs-verifier [--input-files <markdown-files-to-test>]
 ```
 
 * `--input-files` is optional and defaults to `README.md`.

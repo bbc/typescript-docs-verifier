@@ -1,23 +1,22 @@
 import * as fsExtra from 'fs-extra'
 
 export class CodeBlockExtractor {
-  static readonly TYPESCRIPT_CODE_PATTERN = /(?:```typescript\n)((?:\n|.)*?)(?:(?=```))/gi
+  static readonly TYPESCRIPT_CODE_PATTERN = /(?:```(?:(?:typescript)|(?:ts))\n)((?:\n|.)*?)(?:(?=```))/gi
 
   /* istanbul ignore next */
   private constructor () {}
 
-  static extract (markdownFilePath: string): Promise<string[]> {
-    return Promise.resolve()
-      .then(() => CodeBlockExtractor.readFile(markdownFilePath))
-      .then((contents) => CodeBlockExtractor.extractCodeBlocksFromMarkdown(contents))
-      .catch((error) => {
-        throw new Error(`Error extracting code blocks from ${markdownFilePath}: ${error.message}`)
-      })
+  static async extract (markdownFilePath: string): Promise<string[]> {
+    try {
+      const contents = await CodeBlockExtractor.readFile(markdownFilePath)
+      return CodeBlockExtractor.extractCodeBlocksFromMarkdown(contents)
+    } catch (error) {
+      throw new Error(`Error extracting code blocks from ${markdownFilePath}: ${error instanceof Error ? error.message : error}`)
+    }
   }
 
-  private static readFile (path: string): Promise<string> {
-    return fsExtra.readFile(path)
-      .then((buffer) => buffer.toString())
+  private static async readFile (path: string): Promise<string> {
+    return fsExtra.readFile(path, 'utf-8')
   }
 
   private static extractCodeBlocksFromMarkdown (markdown: string): string[] {

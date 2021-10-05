@@ -1,7 +1,6 @@
 import * as tsconfig from 'tsconfig'
-import * as Bluebird from 'bluebird'
 import * as fsExtra from 'fs-extra'
-import { TSError } from 'ts-node/dist/index'
+import { TSError } from 'ts-node'
 import { TypeScriptRunner } from './TypeScriptRunner'
 import { PackageInfo } from './PackageInfo'
 import { CodeBlockExtractor } from './CodeBlockExtractor'
@@ -39,42 +38,40 @@ export class SnippetCompiler {
     return typeScriptConfig
   }
 
-  compileSnippets (documentationFiles: string[]): Bluebird<SnippetCompilationResult[]> {
-    return Bluebird.resolve()
-      .then(() => this.cleanWorkingDirectory())
-      .then(() => fsExtra.ensureDir(this.workingDirectory))
-      .then(() => this.extractAllCodeBlocks(documentationFiles))
-      .map((example: CodeBlock, index) => this.testCodeCompilation(example, index))
-      .finally(() => this.cleanWorkingDirectory())
+  async compileSnippets (documentationFiles: string[]): Promise<SnippetCompilationResult[]> {
+    try {
+      await this.cleanWorkingDirectory()
+      await fsExtra.ensureDir(this.workingDirectory)
+      const examples = await this.extractAllCodeBlocks(documentationFiles)
+      return await Promise.all(
+        examples.map(async (example, index) => this.testCodeCompilation(example, index))
+      )
+    } finally {
+      await this.cleanWorkingDirectory()
+    }
   }
 
   private cleanWorkingDirectory () {
     return fsExtra.remove(this.workingDirectory)
   }
 
-  private extractAllCodeBlocks (documentationFiles: string[]) {
-    return Bluebird.resolve()
-      .then(() => PackageInfo.read())
-      .then((packageDefn) => new LocalImportSubstituter(packageDefn))
-      .then((importSubstituter) => {
-        return Bluebird.all(documentationFiles)
-          .map((file: string) => this.extractFileCodeBlocks(file, importSubstituter))
-          .reduce((previous: CodeBlock[], current: CodeBlock[]) => {
-            return previous.concat(current)
-          }, [])
-      })
+  private async extractAllCodeBlocks (documentationFiles: string[]) {
+    const packageDefn = await PackageInfo.read()
+    const importSubstituter = new LocalImportSubstituter(packageDefn)
+
+    const codeBlocks = await Promise.all(documentationFiles.map((file) => this.extractFileCodeBlocks(file, importSubstituter)))
+    return codeBlocks.flat()
   }
 
-  private extractFileCodeBlocks (file: string, importSubstituter: LocalImportSubstituter): Bluebird<CodeBlock[]> {
-    return Bluebird.resolve()
-      .then(() => CodeBlockExtractor.extract(file))
-      .map((block: string) => {
-        return {
-          file,
-          snippet: block,
-          sanitisedCode: this.sanitiseCodeBlock(importSubstituter, block)
-        }
-      })
+  private async extractFileCodeBlocks (file: string, importSubstituter: LocalImportSubstituter): Promise<CodeBlock[]> {
+    const blocks = await CodeBlockExtractor.extract(file)
+    return blocks.map((block: string) => {
+      return {
+        file,
+        snippet: block,
+        sanitisedCode: this.sanitiseCodeBlock(importSubstituter, block)
+      }
+    })
   }
 
   private sanitiseCodeBlock (importSubstituter: LocalImportSubstituter, block: string): string {
@@ -82,22 +79,23 @@ export class SnippetCompiler {
     return CodeWrapper.wrap(localisedBlock)
   }
 
-  private testCodeCompilation (example: CodeBlock, index: number): Promise<SnippetCompilationResult> {
-    return this.runner.run(example.sanitisedCode)
-      .then(() => {
-        return {
-          snippet: example.snippet,
-          file: example.file,
-          index: index + 1
-        }
-      })
-      .catch((error) => {
-        return {
-          snippet: example.snippet,
-          error,
-          file: example.file,
-          index: index + 1
-        }
-      })
+  private async testCodeCompilation (example: CodeBlock, index: number): Promise<SnippetCompilationResult> {
+    try {
+      await this.runner.run(example.sanitisedCode)
+      return {
+        snippet: example.snippet,
+        file: example.file,
+        index: index + 1
+      }
+    } catch (error) {
+      const wrappedError = error instanceof Error ? error : new Error(String(error))
+
+      return {
+        snippet: example.snippet,
+        error: wrappedError,
+        file: example.file,
+        index: index + 1
+      }
+    }
   }
 }
