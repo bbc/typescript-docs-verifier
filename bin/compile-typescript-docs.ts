@@ -1,6 +1,6 @@
 #! /usr/bin/env node
 
-import ora from 'ora'
+import * as ora from 'ora'
 import * as chalk from 'chalk'
 import * as yargs from 'yargs'
 import { TSError } from 'ts-node'
