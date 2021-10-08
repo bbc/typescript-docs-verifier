@@ -39,7 +39,7 @@ const defaultTsConfig = {
     noImplicitReturns: true,
     typeRoots: [path.join(workingDirectory, 'node_modules', '@types')]
   },
-  exclude: [ 'node_modules', 'example' ]
+  exclude: ['node_modules', 'example']
 }
 
 type File = {
@@ -57,18 +57,18 @@ type ProjectFiles = {
 const createProject = async (files: ProjectFiles = {}) => {
   const filesToWrite: File[] = [{
     name: 'package.json',
-    contents: JSON.stringify((files.packageJson || defaultPackageJson))
+    contents: JSON.stringify((files.packageJson ?? defaultPackageJson))
   }, {
-    name: (files.mainFile || defaultMainFile).name,
-    contents: (files.mainFile || defaultMainFile).contents
+    name: (files.mainFile ?? defaultMainFile).name,
+    contents: (files.mainFile ?? defaultMainFile).contents
   }, {
     name: 'tsconfig.json',
-    contents: files.tsConfig || JSON.stringify(defaultTsConfig)
+    contents: files.tsConfig ?? JSON.stringify(defaultTsConfig)
   }]
 
-  const allFiles = filesToWrite.concat(files.markdownFiles || [defaultMarkdownFile])
+  const allFiles = filesToWrite.concat(files.markdownFiles ?? [defaultMarkdownFile])
   await Promise.all(
-    allFiles.map((file: File) => FsExtra.writeFile(path.join(workingDirectory, file.name), file.contents))
+    allFiles.map(async (file: File) => await FsExtra.writeFile(path.join(workingDirectory, file.name), file.contents))
   )
 
   const nodeTypesFolder = path.join(__dirname, '..', '..', 'node_modules', '@types', 'node')
@@ -101,7 +101,7 @@ describe('TypeScriptDocsVerifier', () => {
 
     verify.it('returns an empty array if no code snippets are present', async () => {
       await createProject()
-      return TypeScriptDocsVerifier.compileSnippets().should.eventually.eql([])
+      return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql([])
     })
 
     verify.it('returns an empty array if no typescript code snippets are present', Gen.array(Gen.string, 4), async (strings) => {
@@ -118,13 +118,13 @@ ${wrapSnippet(strings[3], 'bash')}
 `
 
       await createProject({ markdownFiles: [{ name: 'README.md', contents: noTypeScriptMarkdown }] })
-      return TypeScriptDocsVerifier.compileSnippets()
+      return await TypeScriptDocsVerifier.compileSnippets()
         .should.eventually.eql([])
     })
 
     verify.it('returns an error if a documentation file does not exist', Gen.string, async (filename) => {
       await createProject()
-      return TypeScriptDocsVerifier.compileSnippets(['README.md', filename])
+      return await TypeScriptDocsVerifier.compileSnippets(['README.md', filename])
         .should.be.rejectedWith(filename)
     })
 
@@ -133,7 +133,7 @@ ${wrapSnippet(strings[3], 'bash')}
       genSnippet, Gen.string, async (snippet, fileName) => {
         const typeScriptMarkdown = wrapSnippet(snippet)
         await createProject({ markdownFiles: [{ name: fileName, contents: typeScriptMarkdown }] })
-        return TypeScriptDocsVerifier.compileSnippets(fileName)
+        return await TypeScriptDocsVerifier.compileSnippets(fileName)
           .should.eventually.eql([{
             file: fileName,
             index: 1,
@@ -147,7 +147,7 @@ ${wrapSnippet(strings[3], 'bash')}
       genSnippet, Gen.string, async (snippet, fileName) => {
         const typeScriptMarkdown = wrapSnippet(snippet, 'ts')
         await createProject({ markdownFiles: [{ name: fileName, contents: typeScriptMarkdown }] })
-        return TypeScriptDocsVerifier.compileSnippets(fileName)
+        return await TypeScriptDocsVerifier.compileSnippets(fileName)
           .should.eventually.eql([{
             file: fileName,
             index: 1,
@@ -175,7 +175,7 @@ ${wrapSnippet(strings[3], 'bash')}
         })
 
         await createProject({ markdownFiles: markdownFiles })
-        return TypeScriptDocsVerifier.compileSnippets(fileNames)
+        return await TypeScriptDocsVerifier.compileSnippets(fileNames)
           .should.eventually.eql(expected)
       }
     )
@@ -184,7 +184,7 @@ ${wrapSnippet(strings[3], 'bash')}
       const typeScriptMarkdown = wrapSnippet(snippet)
 
       await createProject({ markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }] })
-      return TypeScriptDocsVerifier.compileSnippets()
+      return await TypeScriptDocsVerifier.compileSnippets()
         .should.eventually.eql([{
           file: 'README.md',
           index: 1,
@@ -196,7 +196,7 @@ ${wrapSnippet(strings[3], 'bash')}
       const typeScriptMarkdown = wrapSnippet(snippet)
 
       await createProject({ markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }] })
-      return TypeScriptDocsVerifier.compileSnippets([])
+      return await TypeScriptDocsVerifier.compileSnippets([])
         .should.eventually.eql([])
     })
 
@@ -227,7 +227,7 @@ ${wrapSnippet(strings[3], 'bash')}
           ${snippet}`
         const typeScriptMarkdown = wrapSnippet(snippet)
         await createProject({ markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }] })
-        return TypeScriptDocsVerifier.compileSnippets()
+        return await TypeScriptDocsVerifier.compileSnippets()
           .should.eventually.eql([{
             file: 'README.md',
             index: 1,
@@ -243,17 +243,17 @@ ${wrapSnippet(strings[3], 'bash')}
         const invalidTypeScriptMarkdown = wrapSnippet(invalidSnippet)
         const markdown = [validTypeScriptMarkdown, invalidTypeScriptMarkdown].join('\n')
         await createProject({ markdownFiles: [{ name: 'README.md', contents: markdown }] })
-        return TypeScriptDocsVerifier.compileSnippets()
-        .should.eventually.satisfy((results: any[]) => {
-          results.should.have.length(2)
-          results[0].should.not.have.property('error')
-          const errorResult = results[1]
-          errorResult.should.have.property('file', 'README.md')
-          errorResult.should.have.property('index', 2)
-          errorResult.should.have.property('snippet', invalidSnippet)
-          errorResult.should.have.property('error')
-          return true
-        })
+        return await TypeScriptDocsVerifier.compileSnippets()
+          .should.eventually.satisfy((results: any[]) => {
+            results.should.have.length(2)
+            results[0].should.not.have.property('error')
+            const errorResult = results[1]
+            errorResult.should.have.property('file', 'README.md')
+            errorResult.should.have.property('index', 2)
+            errorResult.should.have.property('snippet', invalidSnippet)
+            errorResult.should.have.property('error')
+            return true
+          })
       }
     )
 
@@ -274,7 +274,7 @@ ${wrapSnippet(strings[3], 'bash')}
         }
         const typeScriptMarkdown = wrapSnippet(snippet)
         await createProject({ markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }], mainFile })
-        return TypeScriptDocsVerifier.compileSnippets()
+        return await TypeScriptDocsVerifier.compileSnippets()
           .should.eventually.eql([{
             file: 'README.md',
             index: 1,
@@ -309,7 +309,7 @@ ${wrapSnippet(strings[3], 'bash')}
           packageJson
         }
         await createProject(projectFiles)
-        return TypeScriptDocsVerifier.compileSnippets()
+        return await TypeScriptDocsVerifier.compileSnippets()
           .should.eventually.eql([{
             file: 'README.md',
             index: 1,

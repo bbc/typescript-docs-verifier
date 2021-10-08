@@ -1,22 +1,21 @@
 #! /usr/bin/env node
 
-import * as ora from 'ora'
+import ora from 'ora'
 import * as chalk from 'chalk'
 import * as yargs from 'yargs'
 import { TSError } from 'ts-node'
 import * as TypeScriptDocsVerifier from '../index'
 
 const ERROR_LINE_EXTRACTION_PATTERN = /\.ts\s*\((\d+),\d+\):/
-const COMPILED_DOCS_FILE_PREFIX_PATTERN = /compiled\-docs\/block\-\d+\.\d+\.ts/g
+const COMPILED_DOCS_FILE_PREFIX_PATTERN = /compiled-docs\/block-\d+\.\d+\.ts/g
 
-yargs.option('input-files', {
+const cliOptions = yargs.option('input-files', {
   description: 'The list of input files to be processed',
   array: true,
   default: ['README.md']
 })
 
-const argv = yargs.argv
-const inputFiles = argv['input-files'] as string[]
+const inputFiles = cliOptions.parseSync()['input-files']
 
 const spinner = ora()
 spinner.info(`Compiling documentation TypeScript code snippets from ${inputFiles.join(', ')}`).start()
@@ -25,7 +24,7 @@ const formatCode = (code: string, errorLines: number[]) => {
   const lines = code.split('\n')
     .map((line, index) => {
       const lineNumber = index + 1
-      if (errorLines.indexOf(lineNumber) !== -1) {
+      if (errorLines.includes(lineNumber)) {
         return (chalk as any)`{bold.red ${String(lineNumber).padStart(2)}| ${line}}`
       } else {
         return `${String(lineNumber).padStart(2)}| ${line}`
@@ -41,7 +40,7 @@ const findErrorLines = (error: TSError | Error) => {
   const messages = error.diagnosticText.split('\n')
   return messages.map((message: string) => {
     const match = ERROR_LINE_EXTRACTION_PATTERN.exec(message)
-    if (match && match[1]) {
+    if (match?.[1]) {
       return match[1]
     } else {
       return NaN

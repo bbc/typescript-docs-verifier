@@ -7,13 +7,13 @@ import { CodeBlockExtractor } from './CodeBlockExtractor'
 import { LocalImportSubstituter } from './LocalImportSubstituter'
 import { CodeWrapper } from './CodeWrapper'
 
-interface CodeBlock {
+type CodeBlock = {
   readonly file: string
   readonly snippet: string
   readonly sanitisedCode: string
 }
 
-export interface SnippetCompilationResult {
+export type SnippetCompilationResult = {
   readonly file: string
   readonly index: number
   readonly snippet: string
@@ -30,9 +30,7 @@ export class SnippetCompiler {
 
   private static loadTypeScriptConfig (): any {
     const typeScriptConfig = tsconfig.loadSync(process.cwd())
-    if (typeScriptConfig &&
-        typeScriptConfig.config &&
-        typeScriptConfig.config.compilerOptions) {
+    if (typeScriptConfig?.config?.compilerOptions) {
       typeScriptConfig.config.compilerOptions.noUnusedLocals = false
     }
     return typeScriptConfig
@@ -44,22 +42,22 @@ export class SnippetCompiler {
       await fsExtra.ensureDir(this.workingDirectory)
       const examples = await this.extractAllCodeBlocks(documentationFiles)
       return await Promise.all(
-        examples.map(async (example, index) => this.testCodeCompilation(example, index))
+        examples.map(async (example, index) => await this.testCodeCompilation(example, index))
       )
     } finally {
       await this.cleanWorkingDirectory()
     }
   }
 
-  private cleanWorkingDirectory () {
-    return fsExtra.remove(this.workingDirectory)
+  private async cleanWorkingDirectory () {
+    return await fsExtra.remove(this.workingDirectory)
   }
 
   private async extractAllCodeBlocks (documentationFiles: string[]) {
     const packageDefn = await PackageInfo.read()
     const importSubstituter = new LocalImportSubstituter(packageDefn)
 
-    const codeBlocks = await Promise.all(documentationFiles.map((file) => this.extractFileCodeBlocks(file, importSubstituter)))
+    const codeBlocks = await Promise.all(documentationFiles.map(async (file) => await this.extractFileCodeBlocks(file, importSubstituter)))
     return codeBlocks.flat()
   }
 
