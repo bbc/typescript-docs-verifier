@@ -157,6 +157,17 @@ ${wrapSnippet(strings[3], 'bash')}
     )
 
     verify.it(
+      'does not return result if a valid typescript block marked "ts" is supplied if it is preceded by <!-- docs-verifier-ignore --> ',
+      genSnippet, Gen.string, async (snippet, fileName) => {
+        const ignoreString = `<!-- docs-verifier-ignore -->`
+        const typeScriptMarkdown = `${ignoreString}${wrapSnippet(snippet, 'ts')}`
+        await createProject({ markdownFiles: [{ name: fileName, contents: typeScriptMarkdown }] })
+        return TypeScriptDocsVerifier.compileSnippets(fileName)
+          .should.eventually.eql([])
+      }
+    )
+
+    verify.it(
       'compiles snippets from multiple files',
       Gen.distinct(genSnippet, 3), Gen.distinct(Gen.string, 3), async (snippets, fileNames) => {
         const markdownFiles = snippets.map((snippet, index) => {
