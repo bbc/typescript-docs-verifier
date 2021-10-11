@@ -38,10 +38,10 @@
   "scripts": {
     "pretest": "npm run-script build",
     "test": "npm-run-all -p -c unittest lint",
+    "posttest": "npm-run-all compile-docs",
     "unittest": "scripts/test-with-coverage.sh",
     "lint": "eslint '**/*.ts'",
     "build": "rm -rf dist && tsc",
-    "precompile-docs": "npm run-script build",
     "compile-docs": "node ./dist/bin/compile-typescript-docs.js",
     "prepublishOnly": "npm-run-all -s build compile-docs"
   },
@@ -71,7 +71,7 @@
   "dependencies": {
     "chalk": "^4.1.2",
     "fs-extra": "^10.0.0",
-    "ora": "^6.0.1",
+    "ora": "^5.4.1",
     "ts-node": "^10.0.0",
     "tsconfig": "^7.0.0",
     "yargs": "^17.2.1"
