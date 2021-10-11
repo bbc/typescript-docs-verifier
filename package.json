@@ -38,10 +38,10 @@
   "scripts": {
     "pretest": "npm run-script build",
     "test": "npm-run-all -p -c unittest lint",
+    "posttest": "npm-run-all compile-docs",
     "unittest": "scripts/test-with-coverage.sh",
     "lint": "eslint '**/*.ts'",
     "build": "rm -rf dist && tsc",
-    "precompile-docs": "npm run-script build",
     "compile-docs": "node ./dist/bin/compile-typescript-docs.js",
     "prepublishOnly": "npm-run-all -s build compile-docs"
   },
