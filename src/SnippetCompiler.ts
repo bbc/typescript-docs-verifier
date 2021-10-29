@@ -118,9 +118,9 @@ export class SnippetCompiler {
       if (error instanceof TSNode.TSError) {
         const messages = error.diagnosticText.split('\n')
         messages.forEach((message: string) => {
-          const [, lineNumberString] = stripAnsi(message)
-            .match(/Code Block \d+:(\d+):\d+/) ?? []
-          const lineNumber = parseInt(lineNumberString, 10)
+          const [, ttyLineNumber, nonTtyLineNumber] = stripAnsi(message)
+            .match(/Code Block \d+(?::(\d+):\d+)|(?:\((\d+),\d+\))/) ?? []
+          const lineNumber = parseInt(ttyLineNumber || nonTtyLineNumber, 10)
           if (!isNaN(lineNumber)) {
             linesWithErrors.add(lineNumber)
           }
