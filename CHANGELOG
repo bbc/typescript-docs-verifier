@@ -5,8 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [2.1.0]
 ### Changed
-- Migrate builds from Travis to GitHub actions
+- No longer wrap TypeScript code blocks in functions before compilation
+- Write temporary files to the OS temporary directory
+
+### Added
+- An 1-indexed `index` property to the `CodeBlock` type to indicate where in the file the code block was found
+- Add a `linesWithErrors` property to the compilation result to indicate which lines contained errors
 
 ## [2.0.1] - 2021-10-08
 ### Changed

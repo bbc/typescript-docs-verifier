@@ -1,14 +1,15 @@
+import * as path from 'path'
+import * as chalk from 'chalk'
 import * as tsconfig from 'tsconfig'
 import * as fsExtra from 'fs-extra'
-import { TSError } from 'ts-node'
-import { TypeScriptRunner } from './TypeScriptRunner'
+import * as TSNode from 'ts-node'
 import { PackageInfo } from './PackageInfo'
 import { CodeBlockExtractor } from './CodeBlockExtractor'
 import { LocalImportSubstituter } from './LocalImportSubstituter'
-import { CodeWrapper } from './CodeWrapper'
 
 type CodeBlock = {
   readonly file: string
+  readonly index: number
   readonly snippet: string
   readonly sanitisedCode: string
 }
@@ -17,15 +18,18 @@ export type SnippetCompilationResult = {
   readonly file: string
   readonly index: number
   readonly snippet: string
-  readonly error?: TSError | Error
+  readonly linesWithErrors: number[]
+  readonly error?: TSNode.TSError | Error
 }
 
+const COMPILED_DOCS_FILE_PREFIX_PATTERN = /(.*)\/compiled-docs\/block-\d+\.ts/g
+
 export class SnippetCompiler {
-  private readonly runner: TypeScriptRunner
+  private readonly compiler: TSNode.Service
 
   constructor (private readonly workingDirectory: string) {
     const configOptions = SnippetCompiler.loadTypeScriptConfig()
-    this.runner = new TypeScriptRunner(this.workingDirectory, configOptions.config)
+    this.compiler = TSNode.create(configOptions.config)
   }
 
   private static loadTypeScriptConfig (): any {
@@ -42,7 +46,7 @@ export class SnippetCompiler {
       await fsExtra.ensureDir(this.workingDirectory)
       const examples = await this.extractAllCodeBlocks(documentationFiles)
       return await Promise.all(
-        examples.map(async (example, index) => await this.testCodeCompilation(example, index))
+        examples.map(async (example) => await this.testCodeCompilation(example))
       )
     } finally {
       await this.cleanWorkingDirectory()
@@ -63,10 +67,11 @@ export class SnippetCompiler {
 
   private async extractFileCodeBlocks (file: string, importSubstituter: LocalImportSubstituter): Promise<CodeBlock[]> {
     const blocks = await CodeBlockExtractor.extract(file)
-    return blocks.map((block: string) => {
+    return blocks.map((block: string, index) => {
       return {
         file,
         snippet: block,
+        index: index + 1,
         sanitisedCode: this.sanitiseCodeBlock(importSubstituter, block)
       }
     })
@@ -74,25 +79,60 @@ export class SnippetCompiler {
 
   private sanitiseCodeBlock (importSubstituter: LocalImportSubstituter, block: string): string {
     const localisedBlock = importSubstituter.substituteLocalPackageImports(block)
-    return CodeWrapper.wrap(localisedBlock)
+    return localisedBlock
   }
 
-  private async testCodeCompilation (example: CodeBlock, index: number): Promise<SnippetCompilationResult> {
+  private async compile (code: string): Promise<void> {
+    const id = process.hrtime.bigint().toString()
+    const codeFile = path.join(this.workingDirectory, `block-${id}.ts`)
+    await fsExtra.writeFile(codeFile, code)
+    this.compiler.compile(code, codeFile)
+  }
+
+  private removeTemporaryFilePaths (message: string, example: CodeBlock): string {
+    return message.replace(COMPILED_DOCS_FILE_PREFIX_PATTERN, chalk`{blue ${example.file}} → {cyan Code Block ${example.index}}`)
+  }
+
+  private async testCodeCompilation (example: CodeBlock): Promise<SnippetCompilationResult> {
     try {
-      await this.runner.run(example.sanitisedCode)
+      await this.compile(example.sanitisedCode)
       return {
         snippet: example.snippet,
         file: example.file,
-        index: index + 1
+        index: example.index,
+        linesWithErrors: []
       }
-    } catch (error) {
-      const wrappedError = error instanceof Error ? error : new Error(String(error))
+    } catch (rawError) {
+      const error = rawError instanceof Error ? rawError : new Error(String(rawError))
+      error.message = this.removeTemporaryFilePaths(error.message, example)
+
+      Object.entries(error).forEach(([key, value]) => {
+        if (typeof value === 'string') {
+          error[key as keyof typeof error] = this.removeTemporaryFilePaths(value, example)
+        }
+      })
+
+      const linesWithErrors = new Set<number>()
+
+      if (error instanceof TSNode.TSError) {
+        const messages = error.diagnosticText.split('\n')
+        messages.forEach((message: string) => {
+          // eslint-disable-next-line no-control-regex
+          const [, lineNumberString] = message.replace(/\u001b\[.*?m/g, '')
+            .match(/Code Block \d+:(\d+):\d+/) ?? []
+          const lineNumber = parseInt(lineNumberString, 10)
+          if (!isNaN(lineNumber)) {
+            linesWithErrors.add(lineNumber)
+          }
+        })
+      }
 
       return {
         snippet: example.snippet,
-        error: wrappedError,
+        error: error,
+        linesWithErrors: [...linesWithErrors],
         file: example.file,
-        index: index + 1
+        index: example.index
       }
     }
   }
