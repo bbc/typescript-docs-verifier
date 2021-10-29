@@ -120,7 +120,7 @@ export class SnippetCompiler {
         messages.forEach((message: string) => {
           console.log('message', message)
           console.log('stripAnsi', stripAnsi(message))
-          console.log('match', stripAnsi(message).match(/Code Block \d+:?(\d+):\d+/))
+          console.log('match', stripAnsi(message).match(/Code Block \d+.(\d+):\d+/))
           const [, lineNumberString] = stripAnsi(message)
             .match(/Code Block \d+:?(\d+):\d+/) ?? []
           const lineNumber = parseInt(lineNumberString, 10)
