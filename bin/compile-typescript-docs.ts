@@ -1,7 +1,7 @@
 #! /usr/bin/env node
 
-import * as ora from 'ora'
-import * as chalk from 'chalk'
+import ora from 'ora'
+import chalk from 'chalk'
 import * as yargs from 'yargs'
 import * as TypeScriptDocsVerifier from '../index'
 

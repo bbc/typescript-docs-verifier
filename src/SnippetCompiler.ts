@@ -1,8 +1,9 @@
 import * as path from 'path'
-import * as chalk from 'chalk'
+import chalk from 'chalk'
 import * as tsconfig from 'tsconfig'
 import * as fsExtra from 'fs-extra'
 import * as TSNode from 'ts-node'
+import stripAnsi from 'strip-ansi'
 import { PackageInfo } from './PackageInfo'
 import { CodeBlockExtractor } from './CodeBlockExtractor'
 import { LocalImportSubstituter } from './LocalImportSubstituter'
@@ -117,8 +118,7 @@ export class SnippetCompiler {
       if (error instanceof TSNode.TSError) {
         const messages = error.diagnosticText.split('\n')
         messages.forEach((message: string) => {
-          // eslint-disable-next-line no-control-regex
-          const [, lineNumberString] = message.replace(/\u001b\[.*?m/g, '')
+          const [, lineNumberString] = stripAnsi(message)
             .match(/Code Block \d+:(\d+):\d+/) ?? []
           const lineNumber = parseInt(lineNumberString, 10)
           if (!isNaN(lineNumber)) {
