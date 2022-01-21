@@ -18,7 +18,7 @@
     "typescript",
     "verify"
   ],
-  "version": "2.0.1",
+  "version": "2.1.0",
   "main": "dist/index.js",
   "@types": "dist/index.d.ts",
   "bin": "./dist/bin/compile-typescript-docs.js",
@@ -72,6 +72,7 @@
     "chalk": "^4.1.2",
     "fs-extra": "^10.0.0",
     "ora": "^5.4.1",
+    "strip-ansi": "^6.0.1",
     "ts-node": "^10.0.0",
     "tsconfig": "^7.0.0",
     "yargs": "^17.2.1"

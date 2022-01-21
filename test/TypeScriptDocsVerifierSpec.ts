@@ -137,7 +137,8 @@ ${wrapSnippet(strings[3], 'bash')}
           .should.eventually.eql([{
             file: fileName,
             index: 1,
-            snippet
+            snippet,
+            linesWithErrors: []
           }])
       }
     )
@@ -151,27 +152,34 @@ ${wrapSnippet(strings[3], 'bash')}
           .should.eventually.eql([{
             file: fileName,
             index: 1,
-            snippet
+            snippet,
+            linesWithErrors: []
           }])
       }
     )
 
     verify.it(
       'compiles snippets from multiple files',
-      Gen.distinct(genSnippet, 3), Gen.distinct(Gen.string, 3), async (snippets, fileNames) => {
-        const markdownFiles = snippets.map((snippet, index) => {
+      Gen.distinct(genSnippet, 6), Gen.distinct(Gen.string, 3), async (snippets, fileNames) => {
+        const markdownFiles = fileNames.map((fileName, index) => {
           return {
-            name: fileNames[index],
-            contents: wrapSnippet(snippet)
+            name: fileName,
+            contents: wrapSnippet(snippets[2 * index]) + wrapSnippet(snippets[2 * index + 1])
           }
         })
 
-        const expected = snippets.map((snippet, index) => {
-          return {
-            file: fileNames[index],
-            index: index + 1,
-            snippet
-          }
+        const expected = fileNames.flatMap((fileName, index) => {
+          return [{
+            file: fileName,
+            index: 1,
+            snippet: snippets[2 * index],
+            linesWithErrors: []
+          }, {
+            file: fileName,
+            index: 2,
+            snippet: snippets[2 * index + 1],
+            linesWithErrors: []
+          }]
         })
 
         await createProject({ markdownFiles: markdownFiles })
@@ -188,7 +196,8 @@ ${wrapSnippet(strings[3], 'bash')}
         .should.eventually.eql([{
           file: 'README.md',
           index: 1,
-          snippet
+          snippet,
+          linesWithErrors: []
         }])
     })
 
@@ -209,7 +218,8 @@ ${wrapSnippet(strings[3], 'bash')}
           return {
             file: 'README.md',
             index: index + 1,
-            snippet
+            snippet,
+            linesWithErrors: []
           }
         })
 
@@ -231,7 +241,29 @@ ${wrapSnippet(strings[3], 'bash')}
           .should.eventually.eql([{
             file: 'README.md',
             index: 1,
-            snippet
+            snippet,
+            linesWithErrors: []
+          }])
+      }
+    )
+
+    verify.it(
+      'compiles snippets containing modules',
+      genSnippet, async (snippet) => {
+        snippet = `declare module "url" {
+  export interface Url {
+    someAdditionalProperty: boolean
+  }
+}
+${snippet}`
+        const typeScriptMarkdown = wrapSnippet(snippet)
+        await createProject({ markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }] })
+        return await TypeScriptDocsVerifier.compileSnippets()
+          .should.eventually.eql([{
+            file: 'README.md',
+            index: 1,
+            snippet,
+            linesWithErrors: []
           }])
       }
     )
@@ -252,6 +284,15 @@ ${wrapSnippet(strings[3], 'bash')}
             errorResult.should.have.property('index', 2)
             errorResult.should.have.property('snippet', invalidSnippet)
             errorResult.should.have.property('error')
+            errorResult.linesWithErrors.should.deep.equal([1])
+            errorResult.error.message.should.include('README.md')
+            errorResult.error.message.should.include('Code Block 2')
+            errorResult.error.message.should.not.include('block-')
+
+            Object.values(errorResult.error).forEach((value: any) => {
+              value.should.not.include('block-')
+            })
+
             return true
           })
       }
@@ -278,7 +319,8 @@ ${wrapSnippet(strings[3], 'bash')}
           .should.eventually.eql([{
             file: 'README.md',
             index: 1,
-            snippet
+            snippet,
+            linesWithErrors: []
           }])
       }
     )
@@ -313,7 +355,8 @@ ${wrapSnippet(strings[3], 'bash')}
           .should.eventually.eql([{
             file: 'README.md',
             index: 1,
-            snippet
+            snippet,
+            linesWithErrors: []
           }])
       }
     )
