@@ -12,15 +12,26 @@ export class LocalImportSubstituter {
   }
 
   substituteLocalPackageImports (code: string) {
-    const projectImportRegex = new RegExp(`('${this.packageName}'|"${this.packageName}")`, 'g')
+    const projectImportRegex = new RegExp(`('${this.escapedPackageName()}'|"${this.escapedPackageName()}")`, 'g')
+    const projectPathImportRegex = new RegExp(`('${this.escapedPackageName()}/)(.+)'|"(${this.escapedPackageName()}/)(.+)"`, 'g')
     const codeLines = code.split('\n')
     const localisedLines = codeLines.map((line) => {
       if (line.trim().startsWith('import ')) {
-        return line.replace(projectImportRegex, `'${this.pathToPackageMain}'`)
+        if (projectImportRegex.test(line)) {
+          return line.replace(projectImportRegex, `'${this.pathToPackageMain}'`)
+        } else {
+          return line.replace(projectPathImportRegex, (_match, _p1, singleQuotePath, _p3, doubleQuotePath) => {
+            return `'${path.join(this.pathToPackageMain, '..', singleQuotePath ?? doubleQuotePath)}'`
+          })
+        }
       } else {
         return line
       }
     })
     return localisedLines.join('\n')
+  }
+
+  escapedPackageName () {
+    return this.packageName.replace(/[\\/@]/g, '\\$&')
   }
 }
