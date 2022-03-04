@@ -12,11 +12,13 @@ export class LocalImportSubstituter {
   }
 
   substituteLocalPackageImports (code: string) {
-    const projectImportRegex = new RegExp(`('${this.packageName}'|"${this.packageName}")`, 'g')
+    const escapedPackageName = this.packageName.replace(/\\/g, '\\/')
+    const projectImportRegex = new RegExp(`(?:'|")(${escapedPackageName})(/[^'"]+)?(?:'|"|)`, 'g')
     const codeLines = code.split('\n')
     const localisedLines = codeLines.map((line) => {
-      if (line.trim().startsWith('import ')) {
-        return line.replace(projectImportRegex, `'${this.pathToPackageMain}'`)
+      if (line.trim().startsWith('import ') && line.match(projectImportRegex)) {
+        const { 2: subPath } = line.match(projectImportRegex) ?? []
+        return line.replace(this.packageName, `${this.pathToPackageMain}${subPath ?? ''}`)
       } else {
         return line
       }
