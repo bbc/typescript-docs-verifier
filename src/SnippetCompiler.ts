@@ -4,7 +4,7 @@ import * as tsconfig from 'tsconfig'
 import * as fsExtra from 'fs-extra'
 import * as TSNode from 'ts-node'
 import stripAnsi from 'strip-ansi'
-import { PackageInfo } from './PackageInfo'
+import { PackageDefinition } from './PackageInfo'
 import { CodeBlockExtractor } from './CodeBlockExtractor'
 import { LocalImportSubstituter } from './LocalImportSubstituter'
 
@@ -28,13 +28,13 @@ const COMPILED_DOCS_FILE_PREFIX_PATTERN = /(.*)\/compiled-docs\/block-\d+\.ts/g
 export class SnippetCompiler {
   private readonly compiler: TSNode.Service
 
-  constructor (private readonly workingDirectory: string) {
-    const configOptions = SnippetCompiler.loadTypeScriptConfig()
+  constructor (private readonly workingDirectory: string, private readonly packageDefinition: PackageDefinition) {
+    const configOptions = SnippetCompiler.loadTypeScriptConfig(packageDefinition.packageRoot)
     this.compiler = TSNode.create(configOptions.config)
   }
 
-  private static loadTypeScriptConfig (): any {
-    const typeScriptConfig = tsconfig.loadSync(process.cwd())
+  private static loadTypeScriptConfig (packageRoot: string): any {
+    const typeScriptConfig = tsconfig.loadSync(packageRoot)
     if (typeScriptConfig?.config?.compilerOptions) {
       typeScriptConfig.config.compilerOptions.noUnusedLocals = false
     }
@@ -45,6 +45,7 @@ export class SnippetCompiler {
     try {
       await this.cleanWorkingDirectory()
       await fsExtra.ensureDir(this.workingDirectory)
+      await fsExtra.symlink(path.join(this.packageDefinition.packageRoot, 'node_modules'), path.join(this.workingDirectory, 'node_modules'))
       const examples = await this.extractAllCodeBlocks(documentationFiles)
       return await Promise.all(
         examples.map(async (example) => await this.testCodeCompilation(example))
@@ -59,8 +60,7 @@ export class SnippetCompiler {
   }
 
   private async extractAllCodeBlocks (documentationFiles: string[]) {
-    const packageDefn = await PackageInfo.read()
-    const importSubstituter = new LocalImportSubstituter(packageDefn)
+    const importSubstituter = new LocalImportSubstituter(this.packageDefinition)
 
     const codeBlocks = await Promise.all(documentationFiles.map(async (file) => await this.extractFileCodeBlocks(file, importSubstituter)))
     return codeBlocks.flat()

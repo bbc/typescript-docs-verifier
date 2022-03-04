@@ -8,7 +8,7 @@ export class LocalImportSubstituter {
   constructor (packageDefinition: PackageDefinition) {
     this.packageName = packageDefinition.name
     const mainImport = packageDefinition.main.replace(/\.(ts|js)$/, '')
-    this.pathToPackageMain = path.join(process.cwd(), mainImport)
+    this.pathToPackageMain = path.join(packageDefinition.packageRoot, mainImport)
   }
 
   substituteLocalPackageImports (code: string) {
