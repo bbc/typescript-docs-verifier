@@ -48,7 +48,7 @@ type File = {
 }
 
 type ProjectFiles = {
-  readonly packageJson?: PackageDefinition
+  readonly packageJson?: Partial<PackageDefinition>
   readonly markdownFiles?: File[]
   readonly mainFile?: File
   readonly tsConfig?: string
@@ -71,10 +71,8 @@ const createProject = async (files: ProjectFiles = {}) => {
     allFiles.map(async (file: File) => await FsExtra.writeFile(path.join(workingDirectory, file.name), file.contents))
   )
 
-  const nodeTypesFolder = path.join(__dirname, '..', '..', 'node_modules', '@types', 'node')
-  const targetTypesFolder = path.join(workingDirectory, 'node_modules', '@types')
-  await FsExtra.ensureDir(targetTypesFolder)
-  await FsExtra.copy(nodeTypesFolder, path.join(targetTypesFolder, 'node'))
+  const nodeModulesFolder = path.join(__dirname, '..', '..', 'node_modules')
+  await FsExtra.symlink(nodeModulesFolder, path.join(workingDirectory, 'node_modules'))
 }
 
 const genSnippet = () => {
@@ -91,6 +89,7 @@ ${snippet}\`\`\``
 describe('TypeScriptDocsVerifier', () => {
   describe('compileSnippets', () => {
     beforeEach(async () => {
+      await FsExtra.remove(workingDirectory)
       await FsExtra.ensureDir(path.join(workingDirectory))
       process.chdir(workingDirectory)
     })
@@ -269,6 +268,29 @@ ${snippet}`
     )
 
     verify.it(
+      'compiles snippets that use the current project dependencies',
+      genSnippet, async (snippet) => {
+        snippet = `
+// These are some of the TypeScript dependencies of this project
+import {} from 'mocha'
+import { Gen } from 'verify-it'
+import * as chai from 'chai'
+
+Gen.string()
+          ${snippet}`
+        const typeScriptMarkdown = wrapSnippet(snippet)
+        await createProject({ markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }] })
+        return await TypeScriptDocsVerifier.compileSnippets()
+          .should.eventually.eql([{
+            file: 'README.md',
+            index: 1,
+            snippet,
+            linesWithErrors: []
+          }])
+      }
+    )
+
+    verify.it(
       'reports compilation failures',
       genSnippet, Gen.string, async (validSnippet, invalidSnippet) => {
         const validTypeScriptMarkdown = wrapSnippet(validSnippet)
@@ -327,7 +349,7 @@ ${snippet}`
 
     verify.it(
       'localises imports of the current package if the package main is a js file', Gen.string, Gen.string, async (name, main) => {
-        const packageJson: PackageDefinition = {
+        const packageJson: Partial<PackageDefinition> = {
           name,
           main: `${main}.js`
         }
@@ -354,6 +376,41 @@ ${snippet}`
         return await TypeScriptDocsVerifier.compileSnippets()
           .should.eventually.eql([{
             file: 'README.md',
+            index: 1,
+            snippet,
+            linesWithErrors: []
+          }])
+      }
+    )
+
+    verify.it(
+      'can be run from a subdirectory within the project', Gen.array(Gen.word, 5), async (pathElements) => {
+        const snippet = `
+          import { MyClass } from '${defaultPackageJson.name}'
+          const instance = new MyClass()
+          instance.doStuff()`
+        const mainFile = {
+          name: `${defaultPackageJson.main}`,
+          contents: `
+            export class MyClass {
+              doStuff (): void {
+                return
+              }
+            }`
+        }
+
+        const typeScriptMarkdown = wrapSnippet(snippet)
+        await createProject({ markdownFiles: [{ name: 'DOCS.md', contents: typeScriptMarkdown }], mainFile })
+
+        const newCurrentDirectory = path.join(workingDirectory, ...pathElements)
+        await FsExtra.ensureDir(newCurrentDirectory)
+        process.chdir(path.join(...pathElements))
+
+        const pathToMarkdownFile = path.join(path.relative(newCurrentDirectory, workingDirectory), 'DOCS.md')
+
+        return await TypeScriptDocsVerifier.compileSnippets([pathToMarkdownFile])
+          .should.eventually.eql([{
+            file: pathToMarkdownFile,
             index: 1,
             snippet,
             linesWithErrors: []
