@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Link project `node_modules` to snippet compilation directory so you can import from the current project's dependencies in snippets
 
+### Added
+- Support for importing sub-paths within packages
+- Support for scoped package names
+
 ## [2.1.0]
 ### Changed
 - No longer wrap TypeScript code blocks in functions before compilation

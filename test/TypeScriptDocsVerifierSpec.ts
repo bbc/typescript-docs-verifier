@@ -51,6 +51,7 @@ type ProjectFiles = {
   readonly packageJson?: Partial<PackageDefinition>
   readonly markdownFiles?: File[]
   readonly mainFile?: File
+  readonly otherFiles?: File[]
   readonly tsConfig?: string
 }
 
@@ -64,11 +65,14 @@ const createProject = async (files: ProjectFiles = {}) => {
   }, {
     name: 'tsconfig.json',
     contents: files.tsConfig ?? JSON.stringify(defaultTsConfig)
-  }]
+  }, ...(files.otherFiles ?? []), ...(files.markdownFiles ?? [defaultMarkdownFile])]
 
-  const allFiles = filesToWrite.concat(files.markdownFiles ?? [defaultMarkdownFile])
   await Promise.all(
-    allFiles.map(async (file: File) => await FsExtra.writeFile(path.join(workingDirectory, file.name), file.contents))
+    filesToWrite.map(async (file: File) => {
+      const filePath = path.join(workingDirectory, file.name)
+      await FsExtra.ensureFile(filePath)
+      await FsExtra.writeFile(filePath, file.contents)
+    })
   )
 
   const nodeModulesFolder = path.join(__dirname, '..', '..', 'node_modules')
@@ -337,6 +341,131 @@ Gen.string()
         }
         const typeScriptMarkdown = wrapSnippet(snippet)
         await createProject({ markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }], mainFile })
+        return await TypeScriptDocsVerifier.compileSnippets()
+          .should.eventually.eql([{
+            file: 'README.md',
+            index: 1,
+            snippet,
+            linesWithErrors: []
+          }])
+      }
+    )
+
+    verify.it(
+      'localises imports of files within the current package', async () => {
+        const snippet = `
+          import { MyClass } from '${defaultPackageJson.name}/other'
+          const instance = new MyClass()
+          instance.doStuff()`
+        const mainLocation = 'src'
+        const mainFile = {
+          name: path.join(mainLocation, 'index.ts'),
+          contents: `
+            export class MainClass {
+              doStuff (): void {
+                return
+              }
+            }`
+        }
+        const otherFile = {
+          name: path.join(mainLocation, 'other.ts'),
+          contents: `
+            export class MyClass {
+              doStuff (): void {
+                return
+              }
+            }`
+        }
+        const typeScriptMarkdown = wrapSnippet(snippet)
+        await createProject({
+          markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }],
+          mainFile,
+          packageJson: {
+            main: mainLocation,
+            name: defaultPackageJson.name
+          },
+          otherFiles: [otherFile]
+        })
+        return await TypeScriptDocsVerifier.compileSnippets()
+          .should.eventually.eql([{
+            file: 'README.md',
+            index: 1,
+            snippet,
+            linesWithErrors: []
+          }])
+      }
+    )
+
+    verify.it(
+      'localises imports of the current package if the package name is scoped', async () => {
+        const snippet = `
+          import { MyClass } from '@bbc/${defaultPackageJson.name}'
+          const instance = new MyClass()
+          instance.doStuff()`
+        const mainFile = {
+          name: `${defaultPackageJson.main}`,
+          contents: `
+            export class MyClass {
+              doStuff (): void {
+                return
+              }
+            }`
+        }
+
+        const typeScriptMarkdown = wrapSnippet(snippet)
+        await createProject({
+          markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }],
+          mainFile,
+          packageJson: {
+            main: defaultPackageJson.main,
+            name: `@bbc/${defaultPackageJson.name}`
+          }
+        })
+        return await TypeScriptDocsVerifier.compileSnippets()
+          .should.eventually.eql([{
+            file: 'README.md',
+            index: 1,
+            snippet,
+            linesWithErrors: []
+          }])
+      }
+    )
+
+    verify.it(
+      'localises imports of files within the current package when the package is scoped', async () => {
+        const snippet = `
+          import { MyClass } from '@bbc/${defaultPackageJson.name}/other'
+          const instance = new MyClass()
+          instance.doStuff()`
+        const mainLocation = 'src'
+        const mainFile = {
+          name: path.join(mainLocation, 'index.ts'),
+          contents: `
+            export class MainClass {
+              doStuff (): void {
+                return
+              }
+            }`
+        }
+        const otherFile = {
+          name: path.join(mainLocation, 'other.ts'),
+          contents: `
+            export class MyClass {
+              doStuff (): void {
+                return
+              }
+            }`
+        }
+        const typeScriptMarkdown = wrapSnippet(snippet)
+        await createProject({
+          markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }],
+          mainFile,
+          packageJson: {
+            main: mainLocation,
+            name: `@bbc/${defaultPackageJson.name}`
+          },
+          otherFiles: [otherFile]
+        })
         return await TypeScriptDocsVerifier.compileSnippets()
           .should.eventually.eql([{
             file: 'README.md',
