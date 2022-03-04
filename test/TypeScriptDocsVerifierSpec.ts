@@ -13,7 +13,7 @@ const defaultPackageJson = {
   main: `${Gen.string()}.ts`
 }
 const defaultMainFile = {
-  name: 'main-default.ts',
+  name: defaultPackageJson.main,
   contents: FsExtra.readFileSync(path.join(fixturePath, 'main-default.ts')).toString()
 }
 
@@ -99,7 +99,8 @@ describe('TypeScriptDocsVerifier', () => {
     })
 
     afterEach(async () => {
-      await FsExtra.remove(workingDirectory)
+      // await FsExtra.remove(workingDirectory)
+      console.log(workingDirectory)
     })
 
     verify.it('returns an empty array if no code snippets are present', async () => {
@@ -353,13 +354,13 @@ Gen.string()
 
     verify.it(
       'localises imports of files within the current package', async () => {
+        const sourceFolder = Gen.word()
         const snippet = `
-          import { MyClass } from '${defaultPackageJson.name}/other'
+          import { MyClass } from '${defaultPackageJson.name}/${sourceFolder}/other'
           const instance = new MyClass()
           instance.doStuff()`
-        const mainLocation = 'src'
         const mainFile = {
-          name: path.join(mainLocation, 'index.ts'),
+          name: defaultMainFile.name,
           contents: `
             export class MainClass {
               doStuff (): void {
@@ -368,7 +369,7 @@ Gen.string()
             }`
         }
         const otherFile = {
-          name: path.join(mainLocation, 'other.ts'),
+          name: path.join(sourceFolder, 'other.ts'),
           contents: `
             export class MyClass {
               doStuff (): void {
@@ -380,10 +381,6 @@ Gen.string()
         await createProject({
           markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }],
           mainFile,
-          packageJson: {
-            main: mainLocation,
-            name: defaultPackageJson.name
-          },
           otherFiles: [otherFile]
         })
         return await TypeScriptDocsVerifier.compileSnippets()
@@ -433,13 +430,13 @@ Gen.string()
 
     verify.it(
       'localises imports of files within the current package when the package is scoped', async () => {
+        const sourceFolder = Gen.word()
         const snippet = `
-          import { MyClass } from '@bbc/${defaultPackageJson.name}/other'
+          import { MyClass } from '@bbc/${defaultPackageJson.name}/${sourceFolder}/other'
           const instance = new MyClass()
           instance.doStuff()`
-        const mainLocation = 'src'
         const mainFile = {
-          name: path.join(mainLocation, 'index.ts'),
+          name: defaultMainFile.name,
           contents: `
             export class MainClass {
               doStuff (): void {
@@ -448,7 +445,7 @@ Gen.string()
             }`
         }
         const otherFile = {
-          name: path.join(mainLocation, 'other.ts'),
+          name: path.join(sourceFolder, 'other.ts'),
           contents: `
             export class MyClass {
               doStuff (): void {
@@ -461,7 +458,7 @@ Gen.string()
           markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }],
           mainFile,
           packageJson: {
-            main: mainLocation,
+            main: defaultPackageJson.main,
             name: `@bbc/${defaultPackageJson.name}`
           },
           otherFiles: [otherFile]
