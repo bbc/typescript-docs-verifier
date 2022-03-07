@@ -99,8 +99,7 @@ describe('TypeScriptDocsVerifier', () => {
     })
 
     afterEach(async () => {
-      // await FsExtra.remove(workingDirectory)
-      console.log(workingDirectory)
+      await FsExtra.remove(workingDirectory)
     })
 
     verify.it('returns an empty array if no code snippets are present', async () => {
@@ -379,6 +378,53 @@ Gen.string()
         }
         const typeScriptMarkdown = wrapSnippet(snippet)
         await createProject({
+          markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }],
+          mainFile,
+          otherFiles: [otherFile]
+        })
+        return await TypeScriptDocsVerifier.compileSnippets()
+          .should.eventually.eql([{
+            file: 'README.md',
+            index: 1,
+            snippet,
+            linesWithErrors: []
+          }])
+      }
+    )
+
+    verify.it(
+      'localises only the package name in imports of files within the current package', async () => {
+        const snippet = `
+          import lib from 'lib/lib/other'
+          const instance = new lib.MyClass()
+          instance.doStuff()`
+        const mainFile = {
+          name: 'lib.ts',
+          contents: `
+            export class MainClass {
+              doStuff (): void {
+                return
+              }
+            }
+            `
+        }
+        const otherFile = {
+          name: path.join('lib', 'other.ts'),
+          contents: `
+            export class MyClass {
+              doStuff (): void {
+                return
+              }
+            }
+            export default lib = { MyClass }
+            `
+        }
+        const typeScriptMarkdown = wrapSnippet(snippet)
+        await createProject({
+          packageJson: {
+            name: 'lib',
+            main: 'lib.ts'
+          },
           markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }],
           mainFile,
           otherFiles: [otherFile]
