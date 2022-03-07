@@ -4,7 +4,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.2.0]
+### Changed
+- Link project `node_modules` to snippet compilation directory so you can import from the current project's dependencies in snippets
+
+### Added
+- Support for importing sub-paths within packages
+- Support for scoped package names
+
+## [2.1.0]
+### Changed
+- No longer wrap TypeScript code blocks in functions before compilation
+- Write temporary files to the OS temporary directory
+
+### Added
+- An 1-indexed `index` property to the `CodeBlock` type to indicate where in the file the code block was found
+- Add a `linesWithErrors` property to the compilation result to indicate which lines contained errors
+
+## [2.0.1] - 2021-10-08
+### Changed
+- Updated dependencies (including dropping `tslint` in favour of `eslint`)
+  - Pin to version 5.x.x of `ora` to avoid issues with ESM
 
 ## [2.0.0-rc.1] - 2021-09-27
 ### Added

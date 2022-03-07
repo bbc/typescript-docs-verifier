@@ -1,27 +1,46 @@
 #! /usr/bin/env node
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const ora = require("ora");
-const chalk = require("chalk");
-const yargs = require("yargs");
-const TypeScriptDocsVerifier = require("../index");
-const ERROR_LINE_EXTRACTION_PATTERN = /\.ts\s*\((\d+),\d+\):/;
-const COMPILED_DOCS_FILE_PREFIX_PATTERN = /compiled\-docs\/block\-\d+\.\d+\.ts/g;
-yargs.option('input-files', {
+const ora_1 = __importDefault(require("ora"));
+const chalk_1 = __importDefault(require("chalk"));
+const yargs = __importStar(require("yargs"));
+const TypeScriptDocsVerifier = __importStar(require("../index"));
+const cliOptions = yargs.option('input-files', {
     description: 'The list of input files to be processed',
     array: true,
     default: ['README.md']
 });
-const argv = yargs.argv;
-const inputFiles = argv['input-files'];
-const spinner = ora();
+const inputFiles = cliOptions.parseSync()['input-files'];
+const spinner = (0, ora_1.default)();
 spinner.info(`Compiling documentation TypeScript code snippets from ${inputFiles.join(', ')}`).start();
 const formatCode = (code, errorLines) => {
     const lines = code.split('\n')
         .map((line, index) => {
         const lineNumber = index + 1;
-        if (errorLines.indexOf(lineNumber) !== -1) {
-            return chalk `{bold.red ${String(lineNumber).padStart(2)}| ${line}}`;
+        if (errorLines.includes(lineNumber)) {
+            return chalk_1.default `{bold.red ${String(lineNumber).padStart(2)}| ${line}}`;
         }
         else {
             return `${String(lineNumber).padStart(2)}| ${line}`;
@@ -29,23 +48,7 @@ const formatCode = (code, errorLines) => {
     });
     return '    ' + lines.join('\n    ');
 };
-const findErrorLines = (error) => {
-    if (!('diagnosticText' in error)) {
-        return [];
-    }
-    const messages = error.diagnosticText.split('\n');
-    return messages.map((message) => {
-        const match = ERROR_LINE_EXTRACTION_PATTERN.exec(message);
-        if (match && match[1]) {
-            return match[1];
-        }
-        else {
-            return NaN;
-        }
-    }).filter((lineNumber) => lineNumber)
-        .map((lineNumber) => parseInt(lineNumber.toString(), 10));
-};
-const formatError = (error) => '  ' + error.message.replace(COMPILED_DOCS_FILE_PREFIX_PATTERN, '')
+const formatError = (error) => '  ' + error.message
     .split('\n')
     .join('\n      ');
 const doCompilation = async () => {
@@ -53,20 +56,19 @@ const doCompilation = async () => {
     spinner.info(`Found ${results.length} TypeScript snippets`).start();
     results.forEach((result) => {
         if (result.error) {
-            const errorLines = findErrorLines(result.error);
             process.exitCode = 1;
-            spinner.fail(chalk `{red.bold Error compiling example code block ${result.index} in file ${result.file}:}`);
+            spinner.fail(chalk_1.default `{red.bold Error compiling example code block ${result.index} in file ${result.file}:}`);
             console.log(formatError(result.error));
             console.log();
-            console.log(chalk `{blue.bold  Original code:}`);
-            console.log(formatCode(result.snippet, errorLines));
+            console.log(chalk_1.default `{blue.bold  Original code:}`);
+            console.log(formatCode(result.snippet, result.linesWithErrors));
         }
     });
     if (process.exitCode) {
-        spinner.fail(chalk `{red.bold Compilation failed, see above errors}`);
+        spinner.fail(chalk_1.default `{red.bold Compilation failed, see above errors}`);
     }
     else {
-        spinner.succeed(chalk `{green.bold All snippets compiled OK}`);
+        spinner.succeed(chalk_1.default `{green.bold All snippets compiled OK}`);
     }
 };
 doCompilation()
