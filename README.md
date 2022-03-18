@@ -30,6 +30,17 @@ These code blocks are extracted and any imports from the current project are rep
 
 Each code snippet is compiled (but not run) and any compilation errors are reported. Code snippets must compile independently from any other code snippets in the file.
 
+### Ignoring code blocks
+
+Individual code blocks can be ignored by preceding them with a `<!-- ts-docs-verifier:ignore -->` comment:
+
+````Markdown
+<!-- ts-docs-verifier:ignore -->
+```typescript
+// This block won't be compiled by typescript-docs-verifier
+```
+````
+
 ## Script usage
 
 ```bash

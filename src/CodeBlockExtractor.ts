@@ -2,7 +2,7 @@ import * as fsExtra from 'fs-extra'
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class CodeBlockExtractor {
-  static readonly TYPESCRIPT_CODE_PATTERN = /(?:```(?:(?:typescript)|(?:ts))\n)((?:\n|.)*?)(?:(?=```))/gi
+  static readonly TYPESCRIPT_CODE_PATTERN = /(?<!(?:<!--\s*ts-docs-verifier:ignore\s*-->[\r\n]*))(?:```(?:(?:typescript)|(?:ts))\n)((?:\n|.)*?)(?:(?=```))/gi
 
   /* istanbul ignore next */
   private constructor () {}
