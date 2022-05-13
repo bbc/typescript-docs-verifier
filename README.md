@@ -26,7 +26,7 @@ The selected markdown files are searched for `TypeScript` code blocks marked lik
 ```
 ````
 
-These code blocks are extracted and any imports from the current project are replaced with an import of the `main` file from `package.json` (e.g. `import { compileSnippets } from 'typescript-docs-verifier'` would be replaced with `import { compileSnippets } from './dist/index'` for this project).
+These code blocks are extracted and any imports from the current project are replaced with an import of the `main` or `exports` file (see below) from `package.json` (e.g. `import { compileSnippets } from 'typescript-docs-verifier'` would be replaced with `import { compileSnippets } from './dist/index'` for this project).
 
 Each code snippet is compiled (but not run) and any compilation errors are reported. Code snippets must compile independently from any other code snippets in the file.
 
@@ -96,6 +96,36 @@ compileSnippets(inputFiles)
   .catch((error) => {
     console.error('Error compiling TypeScript snippets', error)
   })
+```
+
+## `exports` resolution
+
+The [`exports` property of `package.json`](https://nodejs.org/api/packages.html#exports) is rather complex. Currently this library does not support [SubPath exports](https://nodejs.org/api/packages.html#subpath-exports) and will always prefer the `require` conditional export to the `import` conditional export (since ESM support in TypeScript is still experimental at this time). Supported `exports` patterns at the current time are:
+
+```json
+{
+  exports: "./path/to/file.js"
+}
+
+{
+  exports: {
+    ".": "./path/to/file.js"
+  }
+}
+
+{
+  exports: {
+    "require|node-addons|node|default": "./path/to/file.js"
+  }
+}
+
+{
+  exports: {
+    "require|node-addons|node|default": {
+      ".": "./path/to/file.js"
+    }
+  }
+}
 ```
 
 ## Development

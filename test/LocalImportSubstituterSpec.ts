@@ -2,6 +2,12 @@
 import { expect } from 'chai'
 import { LocalImportSubstituter } from '../src/LocalImportSubstituter'
 
+const defaultPackageInfo = {
+  name: 'my-package',
+  main: 'index.ts',
+  packageRoot: '/path/to/package'
+}
+
 const scenarios = [{
   importLine: `import something from 'awesome'`,
   expected: `import something from '/path/to/package/index'`,
@@ -18,6 +24,78 @@ const scenarios = [{
   importLine: `import something from "awesome"      `,
   expected: `import something from "/path/to/package/index"`,
   name: 'trailing whitespace'
+}, {
+  importLine: `import something from 'awesome'`,
+  expected: `import something from '/path/to/package/main'`,
+  packageInfo: {
+    exports: 'main.ts'
+  },
+  name: 'where exports is a string'
+}, {
+  importLine: `import something from 'awesome'`,
+  expected: `import something from '/path/to/package/main'`,
+  packageInfo: {
+    exports: {
+      '.': 'main.ts'
+    }
+  },
+  name: 'where exports is { ".": "{some-file}" }'
+}, {
+  importLine: `import something from 'awesome'`,
+  expected: `import something from '/path/to/package/main'`,
+  packageInfo: {
+    exports: {
+      'node-addons': 'main.ts'
+    }
+  },
+  name: 'where exports is { "node-addons": "{some-file}" }'
+}, {
+  importLine: `import something from 'awesome'`,
+  expected: `import something from '/path/to/package/main'`,
+  packageInfo: {
+    exports: {
+      node: 'main.ts'
+    }
+  },
+  name: 'where exports is { "node": "{some-file}" }'
+}, {
+  importLine: `import something from 'awesome'`,
+  expected: `import something from '/path/to/package/main'`,
+  packageInfo: {
+    exports: {
+      require: 'main.ts'
+    }
+  },
+  name: 'where exports is { "require": "{some-file}" }'
+}, {
+  importLine: `import something from 'awesome'`,
+  expected: `import something from '/path/to/package/main'`,
+  packageInfo: {
+    exports: {
+      default: 'main.ts'
+    }
+  },
+  name: 'where exports is { "default": "{some-file}" }'
+}, {
+  importLine: `import something from 'awesome'`,
+  expected: `import something from '/path/to/package/main'`,
+  packageInfo: {
+    exports: {
+      ".": 'main.ts'
+    }
+  },
+  name: 'where exports is { "require": { ".": "some-file" }" }'
+}, {
+  importLine: `import something from 'awesome'`,
+  expected: `import something from '/path/to/package/main'`,
+  packageInfo: {
+    exports: {
+      default: {
+        ".": 'main.ts'
+      }
+    }
+  },
+  name: 'where exports is { "require": { "default": { ".": "some-file" } }" }'
 }, {
   importLine: `import something from '@my-scope/awesome'`,
   expected: `import something from '/path/to/package/index'`,
@@ -46,11 +124,7 @@ const scenarios = [{
 
 describe('LocalImportSubstituter', () => {
   it('does not change imports for different packages', () => {
-    const substituter = new LocalImportSubstituter({
-      name: 'my-package',
-      main: 'index.ts',
-      packageRoot: '/path/to/package'
-    })
+    const substituter = new LocalImportSubstituter(defaultPackageInfo)
 
     const code = `import * as other from "package"
 
@@ -60,12 +134,43 @@ console.log('Should not be mutated')`
     expect(result).to.eql(code)
   })
 
-  scenarios.forEach(({ importLine, expected, name, packageName = 'awesome' }) => {
+  it('throws an error if main and exports are both not defined', () => {
+    expect(() => new LocalImportSubstituter({
+      name: 'my-package',
+      packageRoot: '/path/to/package'
+    })).to.throw('Failed to find a valid main or exports entry in package.json file')
+  })
+
+  it('throws an error if exports does not contain a valid entry under default', () => {
+    expect(() => new LocalImportSubstituter({
+      name: 'my-package',
+      packageRoot: '/path/to/package',
+      exports: {
+        default: {
+          'some/specific/path': 'main.ts'
+        }
+      }
+    })).to.throw('Failed to find a valid main or exports entry in package.json file')
+  })
+
+  it('throws an error if exports contains only an undefined value under default', () => {
+    expect(() => new LocalImportSubstituter({
+      name: 'my-package',
+      packageRoot: '/path/to/package',
+      exports: {
+        default: {
+          '.': undefined
+        }
+      }
+    })).to.throw('Failed to find a valid main or exports entry in package.json file')
+  })
+
+  scenarios.forEach(({ importLine, expected, name, packageName = 'awesome', packageInfo = {} }) => {
     it(`localises imports with ${name}`, () => {
       const substituter = new LocalImportSubstituter({
-        name: packageName,
-        main: 'index.ts',
-        packageRoot: '/path/to/package'
+        ...defaultPackageInfo,
+        ...packageInfo,
+        name: packageName
       })
 
       const code = `

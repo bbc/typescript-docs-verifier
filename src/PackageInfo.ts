@@ -3,8 +3,9 @@ import * as fsExtra from 'fs-extra'
 
 export type PackageDefinition = {
   readonly name: string
-  readonly main: string
+  readonly main?: string
   readonly packageRoot: string
+  readonly exports?: string | Record<string, string | Record<string, string | undefined> | undefined>
 }
 
 const searchParentsForPackage = async (currentPath: string): Promise<string> => {
@@ -35,6 +36,7 @@ export class PackageInfo {
     return {
       name: packageInfo.name,
       main: packageInfo.main,
+      exports: packageInfo.exports,
       packageRoot
     }
   }
