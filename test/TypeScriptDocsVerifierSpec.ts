@@ -336,6 +336,44 @@ Gen.string()
     )
 
     verify.it(
+      'reports compilation failures on the correct line', async () => {
+        const mainFile = {
+          name: `${defaultPackageJson.main}`,
+          contents: 'export class MyClass {}'
+        }
+
+        const invalidSnippet = `import { MyClass } from '${defaultPackageJson.name}';
+
+const thisIsOK = true;
+firstLineOK = false;
+console.log('This line is also OK');
+`
+        const invalidTypeScriptMarkdown = wrapSnippet(invalidSnippet)
+        await createProject({ markdownFiles: [{ name: 'README.md', contents: invalidTypeScriptMarkdown }], mainFile })
+
+        return await TypeScriptDocsVerifier.compileSnippets()
+          .should.eventually.satisfy((results: any[]) => {
+            results.should.have.length(1)
+            const errorResult = results[0]
+            errorResult.should.have.property('file', 'README.md')
+            errorResult.should.have.property('index', 1)
+            errorResult.should.have.property('snippet', invalidSnippet)
+            errorResult.should.have.property('error')
+            errorResult.linesWithErrors.should.deep.equal([4])
+            errorResult.error.message.should.include('README.md')
+            errorResult.error.message.should.include('Code Block 1')
+            errorResult.error.message.should.not.include('block-')
+
+            Object.values(errorResult.error).forEach((value: any) => {
+              value.should.not.include('block-')
+            })
+
+            return true
+          })
+      }
+    )
+
+    verify.it(
       'localises imports of the current package if the package main is a ts file', async () => {
         const snippet = `
           import { MyClass } from '${defaultPackageJson.name}'
