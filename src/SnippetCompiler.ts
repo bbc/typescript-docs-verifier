@@ -3,7 +3,6 @@ import chalk from 'chalk'
 import * as tsconfig from 'tsconfig'
 import * as fsExtra from 'fs-extra'
 import * as TSNode from 'ts-node'
-import stripAnsi from 'strip-ansi'
 import { PackageDefinition } from './PackageInfo'
 import { CodeBlockExtractor } from './CodeBlockExtractor'
 import { LocalImportSubstituter } from './LocalImportSubstituter'
@@ -116,14 +115,15 @@ export class SnippetCompiler {
       const linesWithErrors = new Set<number>()
 
       if (error instanceof TSNode.TSError) {
-        const messages = error.diagnosticText.split('\n')
-        messages.forEach((message: string) => {
-          const [, ttyLineNumber, nonTtyLineNumber] = stripAnsi(message)
-            .match(/Code Block \d+(?::(\d+):\d+)|(?:\((\d+),\d+\))/) ?? []
-          const lineNumber = parseInt(ttyLineNumber || nonTtyLineNumber, 10)
-          if (!isNaN(lineNumber)) {
-            linesWithErrors.add(lineNumber)
+        error.diagnostics.forEach((diagnostic) => {
+          const { start } = diagnostic
+
+          if (typeof start === 'undefined') {
+            return
           }
+
+          const lineNumber = [...example.sanitisedCode.substring(0, start)].filter((char) => char === '\n').length + 1
+          linesWithErrors.add(lineNumber)
         })
       }
 
