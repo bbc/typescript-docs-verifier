@@ -147,7 +147,7 @@ console.log('Should not be mutated')`
       packageRoot: '/path/to/package',
       exports: {
         default: {
-          'some/specific/path': 'main.ts'
+          './some/specific/path': './main.ts'
         }
       }
     })).to.throw('Failed to find a valid main or exports entry in package.json file')
