@@ -98,36 +98,6 @@ compileSnippets(inputFiles)
   })
 ```
 
-## `exports` resolution
-
-The [`exports` property of `package.json`](https://nodejs.org/api/packages.html#exports) is rather complex. Currently this library does not support [SubPath exports](https://nodejs.org/api/packages.html#subpath-exports) and will always prefer the `require` conditional export to the `import` conditional export (since ESM support in TypeScript is still experimental at this time). Supported `exports` patterns at the current time are:
-
-```json
-{
-  exports: "./path/to/file.js"
-}
-
-{
-  exports: {
-    ".": "./path/to/file.js"
-  }
-}
-
-{
-  exports: {
-    "require|node-addons|node|default": "./path/to/file.js"
-  }
-}
-
-{
-  exports: {
-    "require|node-addons|node|default": {
-      ".": "./path/to/file.js"
-    }
-  }
-}
-```
-
 ## Development
 
 Run the tests:

@@ -436,7 +436,7 @@ console.log('This line is also OK');
     )
 
     verify.it(
-      'localises imports of the current package using exports.require["."] if it exists', async () => {
+      'localises imports of the current package using exports["."].require if it exists', async () => {
         const snippet = `
           import { MyClass } from '${defaultPackageJson.name}'
           const instance = new MyClass()
@@ -453,8 +453,8 @@ console.log('This line is also OK');
         const packageJson = {
           ...defaultPackageJson,
           exports: {
-            require: {
-              '.': defaultPackageJson.main
+            '.': {
+              require: defaultPackageJson.main
             }
           },
           main: 'some/other/file.js'
@@ -462,6 +462,110 @@ console.log('This line is also OK');
 
         const typeScriptMarkdown = wrapSnippet(snippet)
         await createProject({ markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }], mainFile, packageJson })
+        return await TypeScriptDocsVerifier.compileSnippets()
+          .should.eventually.eql([{
+            file: 'README.md',
+            index: 1,
+            snippet,
+            linesWithErrors: []
+          }])
+      }
+    )
+
+    verify.it(
+      'localises imports of named files within the current package using exports["./something/*"] if it exists', async () => {
+        const sourceFolder = Gen.word()
+        const snippet = `
+          import { MyClass } from '${defaultPackageJson.name}/something/other'
+          const instance = new MyClass()
+          instance.doStuff()`
+        const mainFile = {
+          name: defaultMainFile.name,
+          contents: `
+            export class MainClass {
+              doStuff (): void {
+                return
+              }
+            }`
+        }
+        const otherFile = {
+          name: path.join(sourceFolder, 'src', 'other.ts'),
+          contents: `
+            export class MyClass {
+              doStuff (): void {
+                return
+              }
+            }`
+        }
+
+        const packageJson = {
+          ...defaultPackageJson,
+          exports: {
+            './something/*': `./${sourceFolder}/src/*`
+          },
+          main: 'some/other/file.js'
+        }
+        const typeScriptMarkdown = wrapSnippet(snippet)
+        await createProject({
+          markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }],
+          mainFile,
+          otherFiles: [otherFile],
+          packageJson
+        })
+
+        return await TypeScriptDocsVerifier.compileSnippets()
+          .should.eventually.eql([{
+            file: 'README.md',
+            index: 1,
+            snippet,
+            linesWithErrors: []
+          }])
+      }
+    )
+
+    verify.it(
+      'localises imports of wildcard files within the current package using exports = "./prefix/*/path" if it exists', async () => {
+        const sourceFolder = Gen.word()
+        const snippet = `
+          import { MyClass } from '${defaultPackageJson.name}/some/export'
+          const instance = new MyClass()
+          instance.doStuff()`
+        const mainFile = {
+          name: defaultMainFile.name,
+          contents: `
+            export class MainClass {
+              doStuff (): void {
+                return
+              }
+            }`
+        }
+        const otherFile = {
+          name: path.join(sourceFolder, 'other.ts'),
+          contents: `
+            export class MyClass {
+              doStuff (): void {
+                return
+              }
+            }`
+        }
+
+        const packageJson = {
+          ...defaultPackageJson,
+          exports: {
+            './some/export': {
+              require: otherFile.name
+            }
+          },
+          main: 'some/other/file.js'
+        }
+        const typeScriptMarkdown = wrapSnippet(snippet)
+        await createProject({
+          markdownFiles: [{ name: 'README.md', contents: typeScriptMarkdown }],
+          mainFile,
+          otherFiles: [otherFile],
+          packageJson
+        })
+
         return await TypeScriptDocsVerifier.compileSnippets()
           .should.eventually.eql([{
             file: 'README.md',

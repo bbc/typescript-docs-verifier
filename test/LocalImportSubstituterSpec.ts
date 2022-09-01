@@ -81,21 +81,78 @@ const scenarios = [{
   expected: `import something from '/path/to/package/main'`,
   packageInfo: {
     exports: {
-      ".": 'main.ts'
+      ".": {
+        import: 'main.ts'
+      }
     }
   },
-  name: 'where exports is { "require": { ".": "some-file" }" }'
+  name: 'where exports is { ".": { "import": "{some-file}" } }'
 }, {
   importLine: `import something from 'awesome'`,
   expected: `import something from '/path/to/package/main'`,
   packageInfo: {
     exports: {
-      default: {
-        ".": 'main.ts'
+      ".": {
+        require: 'main.ts'
       }
     }
   },
-  name: 'where exports is { "require": { "default": { ".": "some-file" } }" }'
+  name: 'where exports is { ".": { "require": "{some-file}" } }'
+}, {
+  importLine: `import something from 'awesome'`,
+  expected: `import something from '/path/to/package/main'`,
+  packageInfo: {
+    exports: {
+      ".": {
+        default: 'main.ts'
+      }
+    }
+  },
+  name: 'where exports is { ".": { "default": "{some-file}" } }" }'
+}, {
+  importLine: `import something from 'awesome/some/path'`,
+  expected: `import something from '/path/to/package/internal/path'`,
+  packageInfo: {
+    exports: {
+      ".": "main.ts",
+      "./some/path": "./internal/path.ts"
+    }
+  },
+  name: 'imports a subpath where exports is { "./path": "./some/path.ts" }" }'
+}, {
+  importLine: `import something from 'awesome/some/path'`,
+  expected: `import something from '/path/to/package/internal/path'`,
+  packageInfo: {
+    exports: {
+      ".": "main.ts",
+      "./some/path": {
+        default: "./internal/path.ts"
+      }
+    }
+  },
+  name: 'imports a subpath where exports is { "./path": { default: "./some/path.ts" } } }'
+}, {
+  importLine: `import something from 'awesome/lib/some/thing'`,
+  expected: `import something from '/path/to/package/internal/some/thing'`,
+  packageInfo: {
+    exports: {
+      ".": "main.ts",
+      "./lib/*/thing": "./internal/*/thing.ts"
+    }
+  },
+  name: 'imports a subpath where exports is { "./lib/*/thing": "./internal/*/thing.ts" } }'
+}, {
+  importLine: `import something from 'awesome/lib/some/thing'`,
+  expected: `import something from '/path/to/package/internal/some/thing'`,
+  packageInfo: {
+    exports: {
+      ".": "main.ts",
+      "./lib/*/thing": {
+        import: "./internal/*/thing.ts"
+      }
+    }
+  },
+  name: 'imports a subpath where exports is { "./lib/*/thing": { import: "./internal/*/thing.ts" } } }'
 }, {
   importLine: `import something from '@my-scope/awesome'`,
   expected: `import something from '/path/to/package/index'`,
@@ -142,27 +199,31 @@ console.log('Should not be mutated')`
   })
 
   it('throws an error if exports does not contain a valid entry under default', () => {
-    expect(() => new LocalImportSubstituter({
+    const substituter = new LocalImportSubstituter({
       name: 'my-package',
       packageRoot: '/path/to/package',
       exports: {
-        default: {
-          './some/specific/path': './main.ts'
+        './some/specific/path': {
+          default: './main.ts'
         }
       }
-    })).to.throw('Failed to find a valid main or exports entry in package.json file')
+    })
+    expect(() => substituter.substituteLocalPackageImports('import {} from "my-package"'))
+      .to.throw('Unable to resolve export for path "my-package"')
   })
 
   it('throws an error if exports contains only an undefined value under default', () => {
-    expect(() => new LocalImportSubstituter({
+    const substituter = new LocalImportSubstituter({
       name: 'my-package',
       packageRoot: '/path/to/package',
       exports: {
-        default: {
-          '.': undefined
+        '.': {
+          default: undefined
         }
       }
-    })).to.throw('Failed to find a valid main or exports entry in package.json file')
+    })
+    expect(() => substituter.substituteLocalPackageImports('import {} from "my-package"'))
+      .to.throw('Unable to resolve export for path "my-package"')
   })
 
   scenarios.forEach(({ importLine, expected, name, packageName = 'awesome', packageInfo = {} }) => {

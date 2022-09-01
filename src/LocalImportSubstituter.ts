@@ -2,27 +2,79 @@ import * as path from 'path'
 import { ConditionalExports, PackageDefinition, PackageExports, SubpathExports } from './PackageInfo'
 
 class ExportResolver {
+  private readonly packageName: string
   private readonly packageMain?: string
   private readonly packageExports?: PackageExports
 
-  constructor (packageMain?: string, packageExports?: PackageExports) {
+  constructor (packageName: string, packageMain?: string, packageExports?: PackageExports) {
+    if (!packageMain && !packageExports) {
+      throw new Error(
+        'Failed to find a valid main or exports entry in package.json file'
+      )
+    }
+
+    this.packageName = packageName
     this.packageMain = packageMain
     this.packageExports = packageExports
   }
 
-  private findHighestPriorityExports (): SubpathExports {
+  private findMatchingExport (path: string = '.'): string {
+    if (!this.packageExports) {
+      throw new Error('No exports defined in package.json')
+    }
+
+    if (typeof this.packageExports === 'string' && path === '.') {
+      return this.packageExports
+    }
+
     const conditionalExports = this.packageExports as ConditionalExports
 
     const conditionalExportEntry = conditionalExports['node-addons'] ??
       conditionalExports.node ??
+      conditionalExports.import ??
       conditionalExports.require ??
       conditionalExports.default
 
-    if (conditionalExportEntry) {
+    if (conditionalExportEntry && path === '.') {
       return conditionalExportEntry
     }
 
-    return this.packageExports as SubpathExports
+    const subpathExports = this.packageExports as SubpathExports
+
+    const lookupPath = path === '.' ? path : `.${path}`
+
+    const [matchingExportPath, matchingSubpath] = Object.entries(subpathExports)
+      .find(([exportedPath]) => {
+        if (lookupPath === exportedPath) {
+          return true
+        }
+        const [prefix, suffix] = exportedPath.split('*')
+        return exportedPath.includes('*') && lookupPath.startsWith(prefix) && lookupPath.endsWith(suffix || '')
+      }) ?? []
+
+    if (!matchingExportPath || !matchingSubpath) {
+      throw new Error(`Unable to resolve export for path "${this.packageName}${path === '.' ? '' : path}"`)
+    }
+
+    const [exportPrefix, exportSuffix = ''] = matchingExportPath.split('*')
+    const internalPath = lookupPath.substring(exportPrefix.length, lookupPath.length - exportSuffix.length)
+
+    const subpathEntry = typeof matchingSubpath === 'string'
+      ? matchingSubpath
+      : (
+          matchingSubpath['node-addons'] ??
+          matchingSubpath.node ??
+          matchingSubpath.import ??
+          matchingSubpath.require ??
+          matchingSubpath.default
+        )
+
+    if (subpathEntry) {
+      const [internalPrefix, internalSuffix = ''] = subpathEntry.split('*')
+      return `${internalPrefix}${internalPath}${internalSuffix}`
+    }
+
+    throw new Error(`Unable to resolve export for path "${this.packageName}${path === '.' ? '' : path}"`)
   }
 
   stripSuffix (filePath: string): string {
@@ -31,32 +83,15 @@ class ExportResolver {
 
   resolveExportPath (path?: string): string {
     if (!this.packageExports) {
-      const packageMain = this.packageMain
-
-      if (!packageMain) {
+      if (!this.packageMain) {
         throw new Error('Failed to find main or exports entry in package.json')
       }
 
-      return path ?? this.stripSuffix(packageMain)
+      return path ?? this.stripSuffix(this.packageMain)
     }
 
-    const subpathExports = this.findHighestPriorityExports()
-
-    if (!path) {
-      if (typeof subpathExports === 'string') {
-        return this.stripSuffix(subpathExports)
-      }
-
-      const rootExport = subpathExports['.']
-
-      if (!rootExport) {
-        throw new Error('No "." value found in package.json exports entry')
-      }
-      return this.stripSuffix(rootExport)
-    }
-
-    // TODO: match subpathExports against provided subpath
-    throw new Error(`No package.json exports entry found matching subpath ${path}`)
+    const matchingExport = this.findMatchingExport(path)
+    return this.stripSuffix(matchingExport)
   }
 }
 
@@ -64,59 +99,13 @@ export class LocalImportSubstituter {
   private readonly packageName: string
   private readonly packageRoot: string
   private readonly exportResolver: ExportResolver
-  // private readonly pathToPackageMain: string
 
   constructor (packageDefinition: PackageDefinition) {
     this.packageName = packageDefinition.name
     this.packageRoot = packageDefinition.packageRoot
-    // const packageFile =
-    //   LocalImportSubstituter.resolvePathToPackageFile(packageDefinition)
 
-    this.exportResolver = new ExportResolver(packageDefinition.main, packageDefinition.exports)
-
-    // this.pathToPackageMain = path.join(
-    //   packageDefinition.packageRoot,
-    //   packageFile.replace(/\.(ts|js)$/, '')
-    // )
+    this.exportResolver = new ExportResolver(packageDefinition.name, packageDefinition.main, packageDefinition.exports)
   }
-
-  // private static resolveExportsValue (
-  //   exportsEntry?: string | Record<string, string | undefined>
-  // ): string | null {
-  //   if (typeof exportsEntry === 'undefined') {
-  //     return null
-  //   }
-
-  //   if (typeof exportsEntry === 'string') {
-  //     return exportsEntry
-  //   }
-
-  //   return exportsEntry?.['.'] ?? null
-  // }
-
-  // private static resolvePathToPackageFile (packageDefinition: PackageDefinition): string {
-  //   if (typeof packageDefinition.exports === 'string') {
-  //     return packageDefinition.exports
-  //   }
-
-  //   const subpathExports = packageDefinition.exports as SubpathExports
-  //   const conditionalExports = packageDefinition.exports as ConditionalExports
-
-  //   const packageMainFile = subpathExports?.['.' as SubpathPattern] ??
-  //       LocalImportSubstituter.resolveExportsValue(conditionalExports?.['node-addons']) ??
-  //       LocalImportSubstituter.resolveExportsValue(conditionalExports?.node) ??
-  //       LocalImportSubstituter.resolveExportsValue(conditionalExports?.require) ??
-  //       LocalImportSubstituter.resolveExportsValue(conditionalExports?.default) ??
-  //       packageDefinition.main
-
-  //   if (typeof packageMainFile !== 'string') {
-  //     throw new Error(
-  //       'Failed to find a valid main or exports entry in package.json file'
-  //     )
-  //   }
-
-  //   return packageMainFile
-  // }
 
   substituteLocalPackageImports (code: string) {
     const escapedPackageName = this.packageName.replace(/\\/g, '\\/')
@@ -141,17 +130,6 @@ export class LocalImportSubstituter {
 
       const fullExportPath = path.join(this.packageRoot, resolvedExportPath)
       return `${prefix}${openQuote}${fullExportPath}${closeQuote}`
-
-      //   if (subPath) {
-      //     const matchedSubPath = this.exportResolver.resolveExportPath(subPath)
-
-      //     if (!matchedSubPath) {
-      //       throw new Error(`Unable to find matching subpath export in package JSON exports property for path ${matchedSubPath}`)
-      //     }
-      //     return `${prefix}${openQuote}${this.packageRoot}${matchedSubPath}${closeQuote}`
-      //   }
-
-      //   return `${prefix}${openQuote}${this.pathToPackageMain}${closeQuote}`
     })
     return localisedLines.join('\n')
   }

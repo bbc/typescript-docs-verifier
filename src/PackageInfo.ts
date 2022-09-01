@@ -10,9 +10,14 @@ type ConditionalExportKeys =
   | 'require'
   | 'default'
 
-export type SubpathExports = string | { [key in SubpathPattern]?: string }
+export type SubpathExports = {
+  [key in SubpathPattern]?: string | null | {
+    [key in ConditionalExportKeys]?: string
+  }
+}
+
 export type ConditionalExports = {
-  [key in ConditionalExportKeys]?: string | SubpathExports
+  [key in ConditionalExportKeys]?: string | null
 }
 
 export type PackageExports =
