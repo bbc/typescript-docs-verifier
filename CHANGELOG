@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Support for `exports` in `package.json` including wildcard subpaths
 
+### Changed
+- Compile documentation snippets in the project folder so that dependent packages can be resolved reliably even in nested projects
+
 ## [2.2.2]
 ### Changed
 - Unpinned `ts-node` dependency to fix issues with the most recent TypeScript versions (required the extraction of the line numbers of compilation errors to be changed)
