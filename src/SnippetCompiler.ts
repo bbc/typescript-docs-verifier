@@ -22,8 +22,6 @@ export type SnippetCompilationResult = {
   readonly error?: TSNode.TSError | Error
 }
 
-const COMPILED_DOCS_FILE_PREFIX_PATTERN = /(.*)\/compiled-docs\/block-\d+\.ts/g
-
 export class SnippetCompiler {
   private readonly compiler: TSNode.Service
 
@@ -38,6 +36,10 @@ export class SnippetCompiler {
       typeScriptConfig.config.compilerOptions.noUnusedLocals = false
     }
     return typeScriptConfig
+  }
+
+  private static escapeRegExp (rawString: string): string {
+    return rawString.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   }
 
   async compileSnippets (documentationFiles: string[]): Promise<SnippetCompilationResult[]> {
@@ -90,7 +92,9 @@ export class SnippetCompiler {
   }
 
   private removeTemporaryFilePaths (message: string, example: CodeBlock): string {
-    return message.replace(COMPILED_DOCS_FILE_PREFIX_PATTERN, chalk`{blue ${example.file}} → {cyan Code Block ${example.index}}`)
+    const escapedCompiledDocsFolder = SnippetCompiler.escapeRegExp(path.basename(this.workingDirectory))
+    const compiledDocsFilePrefixPattern = new RegExp(`${escapedCompiledDocsFolder}/block-\\d+\\.ts`, 'g')
+    return message.replace(compiledDocsFilePrefixPattern, chalk`{blue ${example.file}} → {cyan Code Block ${example.index}}`)
   }
 
   private async testCodeCompilation (example: CodeBlock): Promise<SnippetCompilationResult> {

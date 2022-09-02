@@ -1,4 +1,3 @@
-import * as os from 'os'
 import * as path from 'path'
 import { PackageInfo } from './src/PackageInfo'
 import { SnippetCompiler, SnippetCompilationResult } from './src/SnippetCompiler'
@@ -16,8 +15,8 @@ const wrapIfString = (arrayOrString: string[] | string) => {
 }
 
 export async function compileSnippets (markdownFileOrFiles: string | string[] = DEFAULT_FILES): Promise<SnippetCompilationResult[]> {
-  const compiledDocsFolder = path.join(os.tmpdir(), 'compiled-docs')
   const packageDefinition = await PackageInfo.read()
+  const compiledDocsFolder = path.join(packageDefinition.packageRoot, '.tmp-compiled-docs')
   const compiler = new SnippetCompiler(compiledDocsFolder, packageDefinition)
   const fileArray = wrapIfString(markdownFileOrFiles)
   const results = await compiler.compileSnippets(fileArray)
