@@ -1,6 +1,6 @@
 export class MyTestClass {
-  doStuff (): void {
+  doStuff(): void {
     // eslint-disable-next-line no-useless-return
-    return
+    return;
   }
 }
