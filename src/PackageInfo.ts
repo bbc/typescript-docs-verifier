@@ -1,10 +1,35 @@
 import * as path from 'path'
 import * as fsExtra from 'fs-extra'
 
+export type SubpathPattern = '.' | string
+
+type ConditionalExportKeys =
+  | 'node-addons'
+  | 'node'
+  | 'import'
+  | 'require'
+  | 'default'
+
+export type SubpathExports = {
+  [key in SubpathPattern]?: string | null | {
+    [key in ConditionalExportKeys]?: string
+  }
+}
+
+export type ConditionalExports = {
+  [key in ConditionalExportKeys]?: string | null
+}
+
+export type PackageExports =
+  | string
+  | SubpathExports
+  | ConditionalExports
+
 export type PackageDefinition = {
   readonly name: string
-  readonly main: string
+  readonly main?: string
   readonly packageRoot: string
+  readonly exports?: PackageExports
 }
 
 const searchParentsForPackage = async (currentPath: string): Promise<string> => {
@@ -35,6 +60,7 @@ export class PackageInfo {
     return {
       name: packageInfo.name,
       main: packageInfo.main,
+      exports: packageInfo.exports,
       packageRoot
     }
   }
