@@ -44,10 +44,11 @@ Individual code blocks can be ignored by preceding them with a `<!-- ts-docs-ver
 ## Script usage
 
 ```bash
-node_modules/.bin/typescript-docs-verifier [--input-files <markdown-files-to-test>]
+node_modules/.bin/typescript-docs-verifier [--input-files <markdown-files-to-test>] [--project <path-to-tsconfig-file>]
 ```
 
 * `--input-files` is optional and defaults to `README.md`.
+* `--project` is optional and defaults to the `tsconfig.json` file in the package root.
 * Any compilation errors will be reported on the console.
 * The exit code is 1 if there are any compilation errors and 0 otherwise.
 
@@ -60,7 +61,8 @@ import { compileSnippets, SnippetCompilationResult } from 'typescript-docs-verif
 import * as http from 'http'
 
 const inputFiles = ['README', 'examples.md'] // defaults to 'README.md' if not provided
-compileSnippets(inputFiles)
+const tsconfigPath = 'docs-tsconfig.json' // defaults to the 'tsconfig.json' file in the package root
+compileSnippets(inputFiles, tsconfigPath)
   .then((results: SnippetCompilationResult[]) => {
     results.forEach((result: SnippetCompilationResult) => {
       if (result.error) {
@@ -82,7 +84,8 @@ compileSnippets(inputFiles)
 const { compileSnippets } = require('typescript-docs-verifier')
 
 const inputFiles = ['README.md', 'examples.md'] // defaults to 'README.md' if not provided
-compileSnippets(inputFiles)
+const tsconfigPath = 'docs-tsconfig.json' // defaults to the 'tsconfig.json' file in the package root
+compileSnippets(inputFiles, tsconfigPath)
   .then((results) => {
     results.forEach((result) => {
       if (result.error) {
