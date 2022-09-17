@@ -7,7 +7,6 @@
   "extends": [
     "eslint:recommended",
     "prettier",
-    "plugin:import/typescript",
     "plugin:@typescript-eslint/recommended"
   ],
   "plugins": ["functional", "node", "promise"],
