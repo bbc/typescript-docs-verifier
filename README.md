@@ -60,9 +60,9 @@ node_modules/.bin/typescript-docs-verifier [--input-files <markdown-files-to-tes
 import { compileSnippets, SnippetCompilationResult } from 'typescript-docs-verifier'
 import * as http from 'http'
 
-const inputFiles = ['README', 'examples.md'] // defaults to 'README.md' if not provided
+const markdownFiles = ['README', 'examples.md'] // defaults to 'README.md' if not provided
 const tsconfigPath = 'docs-tsconfig.json' // defaults to the 'tsconfig.json' file in the package root
-compileSnippets(inputFiles, tsconfigPath)
+compileSnippets({ markdownFiles, project: tsconfigPath })
   .then((results: SnippetCompilationResult[]) => {
     results.forEach((result: SnippetCompilationResult) => {
       if (result.error) {
@@ -83,9 +83,9 @@ compileSnippets(inputFiles, tsconfigPath)
 ```javascript
 const { compileSnippets } = require('typescript-docs-verifier')
 
-const inputFiles = ['README.md', 'examples.md'] // defaults to 'README.md' if not provided
+const markdownFiles = ['README.md', 'examples.md'] // defaults to 'README.md' if not provided
 const tsconfigPath = 'docs-tsconfig.json' // defaults to the 'tsconfig.json' file in the package root
-compileSnippets(inputFiles, tsconfigPath)
+compileSnippets({ markdownFiles, project: tsconfigPath })
   .then((results) => {
     results.forEach((result) => {
       if (result.error) {

@@ -998,6 +998,28 @@ console.log('This line is also OK');
     );
 
     verify.it(
+      "uses the default settings if an empty object is supplied",
+      genSnippet,
+      Gen.string,
+      async (snippet) => {
+        const typeScriptMarkdown = wrapSnippet(snippet);
+        await createProject({
+          markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
+        });
+        return await TypeScriptDocsVerifier.compileSnippets(
+          {}
+        ).should.eventually.eql([
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
+      }
+    );
+
+    verify.it(
       "overrides the tsconfig.json path when the --project flag is used",
       async () => {
         const snippet = `
@@ -1034,10 +1056,10 @@ console.log('This line is also OK');
           tsconfigJson
         );
 
-        return await TypeScriptDocsVerifier.compileSnippets(
-          "DOCS.md",
-          tsconfigFilename
-        ).should.eventually.eql([
+        return await TypeScriptDocsVerifier.compileSnippets({
+          markdownFiles: ["DOCS.md"],
+          project: tsconfigFilename,
+        }).should.eventually.eql([
           {
             file: "DOCS.md",
             index: 1,
@@ -1087,10 +1109,10 @@ console.log('This line is also OK');
           tsconfigJson
         );
 
-        return await TypeScriptDocsVerifier.compileSnippets(
-          "DOCS.md",
-          path.join(tsconfigDirectory, tsconfigFile)
-        ).should.eventually.eql([
+        return await TypeScriptDocsVerifier.compileSnippets({
+          project: path.join(tsconfigDirectory, tsconfigFile),
+          markdownFiles: ["DOCS.md"],
+        }).should.eventually.eql([
           {
             file: "DOCS.md",
             index: 1,

@@ -45,10 +45,10 @@ const formatError = (error: Error) =>
   "  " + error.message.split("\n").join("\n      ");
 
 const doCompilation = async () => {
-  const results = await TypeScriptDocsVerifier.compileSnippets(
-    inputFiles,
-    project
-  );
+  const results = await TypeScriptDocsVerifier.compileSnippets({
+    markdownFiles: inputFiles,
+    project,
+  });
   spinner.info(`Found ${results.length} TypeScript snippets`).start();
   results.forEach((result) => {
     if (result.error) {
