@@ -996,5 +996,131 @@ console.log('This line is also OK');
         ]);
       }
     );
+
+    verify.it(
+      "uses the default settings if an empty object is supplied",
+      genSnippet,
+      Gen.string,
+      async (snippet) => {
+        const typeScriptMarkdown = wrapSnippet(snippet);
+        await createProject({
+          markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
+        });
+        return await TypeScriptDocsVerifier.compileSnippets(
+          {}
+        ).should.eventually.eql([
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
+      }
+    );
+
+    verify.it(
+      "overrides the tsconfig.json path when the --project flag is used",
+      async () => {
+        const snippet = `
+          import { MyClass } from '${defaultPackageJson.name}'
+          await Promise.resolve();
+          const instance = new MyClass()
+          instance.doStuff()`;
+        const mainFile = {
+          name: `${defaultPackageJson.main}`,
+          contents: `
+            export class MyClass {
+              doStuff (): void {
+                return
+              }
+            }`,
+        };
+
+        const typeScriptMarkdown = wrapSnippet(snippet);
+        await createProject({
+          markdownFiles: [{ name: "DOCS.md", contents: typeScriptMarkdown }],
+          mainFile,
+        });
+
+        const tsconfigFilename = `${Gen.word()}-tsconfig.json`;
+        const tsconfigJson = {
+          compilerOptions: {
+            target: "es2019",
+            module: "esnext",
+          },
+        };
+
+        await FsExtra.writeJSON(
+          path.join(workingDirectory, tsconfigFilename),
+          tsconfigJson
+        );
+
+        return await TypeScriptDocsVerifier.compileSnippets({
+          markdownFiles: ["DOCS.md"],
+          project: tsconfigFilename,
+        }).should.eventually.eql([
+          {
+            file: "DOCS.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
+      }
+    );
+
+    verify.it(
+      "supports a file path (not just a file name) with the --project flag",
+      async () => {
+        const snippet = `
+          import { MyClass } from '${defaultPackageJson.name}'
+          await Promise.resolve();
+          const instance = new MyClass()
+          instance.doStuff()`;
+        const mainFile = {
+          name: `${defaultPackageJson.main}`,
+          contents: `
+            export class MyClass {
+              doStuff (): void {
+                return
+              }
+            }`,
+        };
+
+        const typeScriptMarkdown = wrapSnippet(snippet);
+        await createProject({
+          markdownFiles: [{ name: "DOCS.md", contents: typeScriptMarkdown }],
+          mainFile,
+        });
+
+        const tsconfigDirectory = Gen.word();
+        const tsconfigFile = `${Gen.word()}-tsconfig.json`;
+        const tsconfigJson = {
+          compilerOptions: {
+            target: "es2019",
+            module: "esnext",
+          },
+        };
+
+        await FsExtra.ensureDir(path.join(workingDirectory, tsconfigDirectory));
+        await FsExtra.writeJSON(
+          path.join(workingDirectory, tsconfigDirectory, tsconfigFile),
+          tsconfigJson
+        );
+
+        return await TypeScriptDocsVerifier.compileSnippets({
+          project: path.join(tsconfigDirectory, tsconfigFile),
+          markdownFiles: ["DOCS.md"],
+        }).should.eventually.eql([
+          {
+            file: "DOCS.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
+      }
+    );
   });
 });

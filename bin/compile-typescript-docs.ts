@@ -5,13 +5,20 @@ import chalk from "chalk";
 import * as yargs from "yargs";
 import * as TypeScriptDocsVerifier from "../index";
 
-const cliOptions = yargs.option("input-files", {
-  description: "The list of input files to be processed",
-  array: true,
-  default: ["README.md"],
-});
+const cliOptions = yargs
+  .option("input-files", {
+    description: "The list of input files to be processed",
+    array: true,
+    default: ["README.md"],
+  })
+  .option("project", {
+    description:
+      "The path (relative to the package root) to the tsconfig.json file to use when compiling snippets (defaults to the `tsconfig.json` in the package root)",
+    string: true,
+    requiresArg: false,
+  });
 
-const inputFiles = cliOptions.parseSync()["input-files"];
+const { "input-files": inputFiles, project } = cliOptions.parseSync();
 
 const spinner = ora();
 spinner
@@ -38,7 +45,10 @@ const formatError = (error: Error) =>
   "  " + error.message.split("\n").join("\n      ");
 
 const doCompilation = async () => {
-  const results = await TypeScriptDocsVerifier.compileSnippets(inputFiles);
+  const results = await TypeScriptDocsVerifier.compileSnippets({
+    markdownFiles: inputFiles,
+    project,
+  });
   spinner.info(`Found ${results.length} TypeScript snippets`).start();
   results.forEach((result) => {
     if (result.error) {

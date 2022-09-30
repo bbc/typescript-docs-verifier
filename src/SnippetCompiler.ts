@@ -27,18 +27,26 @@ export class SnippetCompiler {
 
   constructor(
     private readonly workingDirectory: string,
-    private readonly packageDefinition: PackageDefinition
+    private readonly packageDefinition: PackageDefinition,
+    project?: string
   ) {
     const configOptions = SnippetCompiler.loadTypeScriptConfig(
-      packageDefinition.packageRoot
+      packageDefinition.packageRoot,
+      project
     );
     this.compiler = TSNode.create(configOptions.config as TSNode.CreateOptions);
   }
 
-  private static loadTypeScriptConfig(packageRoot: string): {
+  private static loadTypeScriptConfig(
+    packageRoot: string,
+    project?: string
+  ): {
     config: unknown;
   } {
-    const typeScriptConfig = tsconfig.loadSync(packageRoot);
+    const fullProjectPath = path.join(packageRoot, project ?? "");
+    const { base, dir } = path.parse(fullProjectPath);
+
+    const typeScriptConfig = tsconfig.loadSync(dir, base);
     if (typeScriptConfig?.config?.compilerOptions) {
       typeScriptConfig.config.compilerOptions.noUnusedLocals = false;
     }
