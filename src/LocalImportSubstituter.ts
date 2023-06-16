@@ -158,7 +158,9 @@ export class LocalImportSubstituter {
 
       const resolvedExportPath = this.exportResolver.resolveExportPath(subPath);
 
-      const fullExportPath = path.join(this.packageRoot, resolvedExportPath);
+      const fullExportPath = path
+        .join(this.packageRoot, resolvedExportPath)
+        .replace(/\\/g, "\\");
       return `${prefix}${openQuote}${fullExportPath}${closeQuote}`;
     });
     return localisedLines.join("\n");
