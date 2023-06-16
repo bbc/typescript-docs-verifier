@@ -160,7 +160,7 @@ export class LocalImportSubstituter {
 
       const fullExportPath = path
         .join(this.packageRoot, resolvedExportPath)
-        .replace(/\\/g, "\\");
+        .replace(/\\/g, "\\\\");
       return `${prefix}${openQuote}${fullExportPath}${closeQuote}`;
     });
     return localisedLines.join("\n");
