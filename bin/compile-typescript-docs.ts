@@ -9,6 +9,7 @@ const cliOptions = yargs
   .option("input-files", {
     description: "The list of input files to be processed",
     array: true,
+    string: true,
     default: ["README.md"],
   })
   .option("project", {

@@ -63,10 +63,6 @@ export class SnippetCompiler {
     try {
       await this.cleanWorkingDirectory();
       await fsExtra.ensureDir(this.workingDirectory);
-      await fsExtra.symlink(
-        path.join(this.packageDefinition.packageRoot, "node_modules"),
-        path.join(this.workingDirectory, "node_modules")
-      );
       const examples = await this.extractAllCodeBlocks(documentationFiles);
       return await Promise.all(
         examples.map(async (example) => await this.testCodeCompilation(example))
