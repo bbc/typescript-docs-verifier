@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.4.1]
+### Changed
+- Various fixes for Windows environments
+
 ## [2.4.0]
 ### Added
 - A new `--project` option that overrides the `tsconfig.json` file to be used when compiling snippets
@@ -18,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Support for `exports` in `package.json` including wildcard subpaths
 
-### Changed
+### Changed
 - Compile documentation snippets in the project folder so that dependent packages can be resolved reliably even in nested projects
 
 ## [2.2.2]
