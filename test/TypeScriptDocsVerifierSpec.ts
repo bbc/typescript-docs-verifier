@@ -559,7 +559,7 @@ console.log('This line is also OK');
       }
     );
 
-    verify.it.only(
+    verify.it(
       "localises imports of the current package if the package main is a tsx file",
       async () => {
         const snippet = `
