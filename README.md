@@ -23,12 +23,27 @@ The selected markdown files are searched for `TypeScript` code blocks marked lik
 ````Markdown
 ```typescript
 // Some TypeScript code here
+const write = 'some code';
 ```
 ````
 
 These code blocks are extracted and any imports from the current project are replaced with an import of the `main` or `exports` from `package.json` (e.g. `import { compileSnippets } from 'typescript-docs-verifier'` would be replaced with `import { compileSnippets } from './dist/index'` for this project).
 
 Each code snippet is compiled (but not run) and any compilation errors are reported. Code snippets must compile independently from any other code snippets in the file.
+
+The library can also be used to type check `.tsx` files:
+
+````Markdown
+```tsx
+import React from 'react'
+
+const SomeComponent = () => (
+  <div>
+    This is a TSX component!
+  </div>
+)
+```
+````
 
 ### Ignoring code blocks
 

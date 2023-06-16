@@ -210,6 +210,43 @@ ${wrapSnippet(strings[3], "bash")}
     );
 
     verify.it(
+      'returns a single element result array when a valid typescript block marked "tsx" is supplied',
+      Gen.string,
+      async (fileName) => {
+        const typeScriptMarkdown = `import React from 'react';
+export const bob = () => (<div></div>);
+`;
+        ("tsx");
+        await createProject({
+          markdownFiles: [
+            {
+              name: fileName,
+              contents: wrapSnippet(typeScriptMarkdown, "tsx"),
+            },
+          ],
+          tsConfig: JSON.stringify({
+            ...defaultTsConfig,
+            compilerOptions: {
+              ...defaultTsConfig.compilerOptions,
+              esModuleInterop: true,
+              jsx: "react",
+            },
+          }),
+        });
+        return await TypeScriptDocsVerifier.compileSnippets(
+          fileName
+        ).should.eventually.eql([
+          {
+            file: fileName,
+            index: 1,
+            snippet: typeScriptMarkdown,
+            linesWithErrors: [],
+          },
+        ]);
+      }
+    );
+
+    verify.it(
       "ignores code blocks preceded by <!-- ts-docs-verifier:ignore --> ",
       genSnippet,
       Gen.string,
@@ -508,6 +545,53 @@ console.log('This line is also OK');
         await createProject({
           markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
           mainFile,
+        });
+        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
+          [
+            {
+              file: "README.md",
+              index: 1,
+              snippet,
+              linesWithErrors: [],
+            },
+          ]
+        );
+      }
+    );
+
+    verify.it.only(
+      "localises imports of the current package if the package main is a tsx file",
+      async () => {
+        const snippet = `
+          import React from 'react';
+          import { MyComponent } from '${defaultPackageJson.name}';
+          const App = () => (
+            <MyComponent value={1} />
+          );`;
+        const mainFile = {
+          name: `main.tsx`,
+          contents: `
+            import React from 'react';
+            export const MyComponent = ({ value: number }) => (
+              <span>{value.toLocaleString()}</span>
+            );`,
+        };
+        const typeScriptMarkdown = wrapSnippet(snippet, "tsx");
+        await createProject({
+          markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
+          mainFile,
+          packageJson: {
+            ...defaultPackageJson,
+            main: "main.tsx",
+          },
+          tsConfig: JSON.stringify({
+            ...defaultTsConfig,
+            compilerOptions: {
+              ...defaultTsConfig.compilerOptions,
+              esModuleInterop: true,
+              jsx: "react",
+            },
+          }),
         });
         return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
           [

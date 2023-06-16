@@ -102,7 +102,7 @@ class ExportResolver {
   }
 
   stripSuffix(filePath: string): string {
-    return filePath.replace(/\.(ts|js)$/, "");
+    return filePath.replace(/\.(tsx?|js)$/, "");
   }
 
   resolveExportPath(path?: string): string {
