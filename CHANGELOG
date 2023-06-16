@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.5.0]
+### Added
+- Support for `tsx` snippets
+
 ## [2.4.1]
 ### Changed
 - Various fixes for Windows environments
