@@ -73,7 +73,7 @@ compileSnippets({ markdownFiles, project: tsconfigPath })
       }
     })
   })
-  .catch((error) => {
+  .catch((error: unknown) => {
     console.error('Error compiling TypeScript snippets', error)
   })
 ```
