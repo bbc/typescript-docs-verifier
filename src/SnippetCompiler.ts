@@ -12,6 +12,7 @@ type CodeBlock = {
   readonly index: number;
   readonly snippet: string;
   readonly sanitisedCode: string;
+  readonly type: "ts" | "tsx";
 };
 
 export type SnippetCompilationResult = {
@@ -95,12 +96,13 @@ export class SnippetCompiler {
     importSubstituter: LocalImportSubstituter
   ): Promise<CodeBlock[]> {
     const blocks = await CodeBlockExtractor.extract(file);
-    return blocks.map((block: string, index) => {
+    return blocks.map(({ code, type }, index) => {
       return {
         file,
-        snippet: block,
+        type,
+        snippet: code,
         index: index + 1,
-        sanitisedCode: this.sanitiseCodeBlock(importSubstituter, block),
+        sanitisedCode: this.sanitiseCodeBlock(importSubstituter, code),
       };
     });
   }
@@ -114,9 +116,9 @@ export class SnippetCompiler {
     return localisedBlock;
   }
 
-  private async compile(code: string): Promise<void> {
+  private async compile(code: string, type: "ts" | "tsx"): Promise<void> {
     const id = process.hrtime.bigint().toString();
-    const codeFile = path.join(this.workingDirectory, `block-${id}.ts`);
+    const codeFile = path.join(this.workingDirectory, `block-${id}.${type}`);
     await fsExtra.writeFile(codeFile, code);
     this.compiler.compile(code, codeFile);
   }
@@ -142,7 +144,7 @@ export class SnippetCompiler {
     example: CodeBlock
   ): Promise<SnippetCompilationResult> {
     try {
-      await this.compile(example.sanitisedCode);
+      await this.compile(example.sanitisedCode, example.type);
       return {
         snippet: example.snippet,
         file: example.file,

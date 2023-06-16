@@ -3,14 +3,16 @@ import * as fsExtra from "fs-extra";
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class CodeBlockExtractor {
   static readonly TYPESCRIPT_CODE_PATTERN =
-    /(?<!(?:<!--\s*ts-docs-verifier:ignore\s*-->[\r?\n]*))(?:```(?:(?:typescript)|(?:ts))\r?\n)((?:\r?\n|.)*?)(?:(?=```))/gi;
+    /(?<!(?:<!--\s*ts-docs-verifier:ignore\s*-->[\r?\n]*))(?:```(?:(?:typescript)|(tsx?))\r?\n)((?:\r?\n|.)*?)(?:(?=```))/gi;
 
   /* istanbul ignore next */
   private constructor() {
     //
   }
 
-  static async extract(markdownFilePath: string): Promise<string[]> {
+  static async extract(
+    markdownFilePath: string
+  ): Promise<{ code: string; type: "tsx" | "ts" }[]> {
     try {
       const contents = await CodeBlockExtractor.readFile(markdownFilePath);
       return CodeBlockExtractor.extractCodeBlocksFromMarkdown(contents);
@@ -27,10 +29,15 @@ export class CodeBlockExtractor {
     return await fsExtra.readFile(path, "utf-8");
   }
 
-  private static extractCodeBlocksFromMarkdown(markdown: string): string[] {
-    const codeBlocks: string[] = [];
-    markdown.replace(this.TYPESCRIPT_CODE_PATTERN, (_, code) => {
-      codeBlocks.push(code);
+  private static extractCodeBlocksFromMarkdown(
+    markdown: string
+  ): { code: string; type: "tsx" | "ts" }[] {
+    const codeBlocks: { code: string; type: "tsx" | "ts" }[] = [];
+    markdown.replace(this.TYPESCRIPT_CODE_PATTERN, (_, type, code) => {
+      codeBlocks.push({
+        code,
+        type: type === "tsx" ? "tsx" : "ts",
+      });
       return code;
     });
     return codeBlocks;
