@@ -483,6 +483,50 @@ Gen.string()
       }
     );
 
+    verify.it(
+      "reports compilation failures when ts-node is configured to transpile only in tsconfig.json",
+      genSnippet,
+      async (validSnippet) => {
+        const invalidSnippet = `import('fs').thisFunctionDoesNotExist();`;
+        const validTypeScriptMarkdown = wrapSnippet(validSnippet);
+        const invalidTypeScriptMarkdown = wrapSnippet(invalidSnippet);
+        const markdown = [
+          validTypeScriptMarkdown,
+          invalidTypeScriptMarkdown,
+        ].join("\n");
+        await createProject({
+          markdownFiles: [{ name: "README.md", contents: markdown }],
+          tsConfig: JSON.stringify({
+            ...defaultTsConfig,
+            "ts-node": {
+              transpileOnly: true,
+            },
+          }),
+        });
+        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.satisfy(
+          (results: TypeScriptDocsVerifier.SnippetCompilationResult[]) => {
+            results.should.have.length(2);
+            results[0].should.not.have.property("error");
+            const errorResult = results[1];
+            errorResult.should.have.property("file", "README.md");
+            errorResult.should.have.property("index", 2);
+            errorResult.should.have.property("snippet", invalidSnippet);
+            errorResult.should.have.property("error");
+            errorResult.linesWithErrors.should.deep.equal([1]);
+            errorResult?.error?.message.should.include("README.md");
+            errorResult?.error?.message.should.include("Code Block 2");
+            errorResult?.error?.message.should.not.include("block-");
+
+            Object.values(errorResult.error || {}).forEach((value: unknown) => {
+              (value as string).should.not.include("block-");
+            });
+
+            return true;
+          }
+        );
+      }
+    );
+
     verify.it("reports compilation failures on the correct line", async () => {
       const mainFile = {
         name: `${defaultPackageJson.main}`,
