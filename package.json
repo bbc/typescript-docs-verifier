@@ -21,7 +21,9 @@
   "version": "2.5.1",
   "main": "dist/index.js",
   "@types": "dist/index.d.ts",
-  "bin": "./dist/bin/compile-typescript-docs.js",
+  "bin": {
+    "typescript-docs-verifier": "dist/bin/compile-typescript-docs.js"
+  },
   "license": "Apache-2.0",
   "author": "BBC",
   "repository": {
