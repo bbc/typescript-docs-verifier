@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/quotes */
 import { expect } from "chai";
 import { LocalImportSubstituter } from "../src/LocalImportSubstituter";
 

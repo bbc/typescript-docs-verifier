@@ -83,11 +83,11 @@ class ExportResolver {
     const subpathEntry =
       typeof matchingSubpath === "string"
         ? matchingSubpath
-        : matchingSubpath["node-addons"] ??
+        : (matchingSubpath["node-addons"] ??
           matchingSubpath.node ??
           matchingSubpath.import ??
           matchingSubpath.require ??
-          matchingSubpath.default;
+          matchingSubpath.default);
 
     if (subpathEntry) {
       const [internalPrefix, internalSuffix = ""] = subpathEntry.split("*");

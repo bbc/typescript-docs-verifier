@@ -9,31 +9,29 @@
     "prettier",
     "plugin:@typescript-eslint/recommended"
   ],
-  "plugins": ["functional", "node", "promise"],
+  "plugins": [
+    "functional",
+    "node",
+    "promise"
+  ],
   "parser": "@typescript-eslint/parser",
   "rules": {
     "@typescript-eslint/strict-boolean-expressions": 0,
     "@typescript-eslint/explicit-function-return-type": 0,
     "@typescript-eslint/restrict-template-expressions": 0,
-    "@typescript-eslint/consistent-type-definitions": [2, "type"],
-    "@typescript-eslint/no-explicit-any": ["error"],
-    "@typescript-eslint/no-non-null-assertion": ["error"],
-    "@typescript-eslint/no-unused-vars": ["error"],
-    "functional/no-let": 2,
-    "@typescript-eslint/ban-types": [
+    "@typescript-eslint/consistent-type-definitions": [
       2,
-      {
-        "types": {
-          "String": "Use string instead.",
-          "Number": "User number instead.",
-          "Boolean": "Use boolean instead.",
-          "Object": "User object instead."
-        }
-      }
-    ]
+      "type"
+    ],
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/no-non-null-assertion": "error",
+    "@typescript-eslint/no-unused-vars": "error",
+    "functional/no-let": 2
   },
   "parserOptions": {
     "project": "tsconfig.json"
   },
-  "ignorePatterns": ["dist"]
+  "ignorePatterns": [
+    "dist"
+  ]
 }

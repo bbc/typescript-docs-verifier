@@ -216,7 +216,6 @@ ${wrapSnippet(strings[3], "bash")}
         const typeScriptMarkdown = `import React from 'react';
 export const bob = () => (<div></div>);
 `;
-        ("tsx");
         await createProject({
           markdownFiles: [
             {
