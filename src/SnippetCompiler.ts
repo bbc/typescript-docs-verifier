@@ -35,7 +35,11 @@ export class SnippetCompiler {
       packageDefinition.packageRoot,
       project
     );
-    this.compiler = TSNode.create(configOptions.config as TSNode.CreateOptions);
+    const tsConfig = {
+      ...(configOptions.config as TSNode.CreateOptions),
+      transpileOnly: false,
+    };
+    this.compiler = TSNode.create(tsConfig);
   }
 
   private static loadTypeScriptConfig(
