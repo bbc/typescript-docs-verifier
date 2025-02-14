@@ -24,7 +24,7 @@ export type SnippetCompilationResult = {
 };
 
 export class SnippetCompiler {
-  private readonly compiler: TSNode.Service;
+  private readonly compilerConfig: TSNode.CreateOptions;
 
   constructor(
     private readonly workingDirectory: string,
@@ -35,11 +35,10 @@ export class SnippetCompiler {
       packageDefinition.packageRoot,
       project
     );
-    const tsConfig = {
+    this.compilerConfig = {
       ...(configOptions.config as TSNode.CreateOptions),
       transpileOnly: false,
     };
-    this.compiler = TSNode.create(tsConfig);
   }
 
   private static loadTypeScriptConfig(
@@ -124,7 +123,8 @@ export class SnippetCompiler {
     const id = process.hrtime.bigint().toString();
     const codeFile = path.join(this.workingDirectory, `block-${id}.${type}`);
     await fsExtra.writeFile(codeFile, code);
-    this.compiler.compile(code, codeFile);
+    const compiler = TSNode.create(this.compilerConfig);
+    compiler.compile(code, codeFile);
   }
 
   private removeTemporaryFilePaths(

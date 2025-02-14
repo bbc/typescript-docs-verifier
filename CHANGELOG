@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.5.3]
+### Changed
+- Use a separate `ts-node` compiler per-snippet to ensure that compilation of snippets is independent
+
 ## [2.5.2]
 ### Removed
 - Obsolete Travis CI build badge from README

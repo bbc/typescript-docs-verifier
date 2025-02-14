@@ -388,6 +388,31 @@ export const bob = () => (<div></div>);
       }
     );
 
+    verify.it("compiles snippets independently", async () => {
+      const snippet1 = `interface Foo { bar: 123 }`;
+      const snippet2 = `interface Foo { bar: () => void }`;
+      const typeScriptMarkdown = wrapSnippet(snippet1) + wrapSnippet(snippet2);
+      await createProject({
+        markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
+      });
+      return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
+        [
+          {
+            file: "README.md",
+            index: 1,
+            snippet: snippet1,
+            linesWithErrors: [],
+          },
+          {
+            file: "README.md",
+            index: 2,
+            snippet: snippet2,
+            linesWithErrors: [],
+          },
+        ]
+      );
+    });
+
     verify.it(
       "compiles snippets containing modules",
       genSnippet,
