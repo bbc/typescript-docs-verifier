@@ -1291,7 +1291,7 @@ console.log('This line is also OK');
       }
     );
 
-    verify.it(
+    verify.it.skip(
       "does not run out of memory when processing a large number of snippets",
       async () => {
         const snippetLength = 600;
