@@ -1284,5 +1284,88 @@ console.log('This line is also OK');
         ]);
       }
     );
+
+    verify.it(
+      "does not run out of memory when processing large numbers of snippets",
+      async () => {
+        // Create a large number of TypeScript snippets that will consume significant memory
+        const snippets = Array(50)
+          .fill(null)
+          .map((_, i) => {
+            return `
+interface LargeInterface${i} {
+  prop1: string;
+  prop2: number;
+  prop3: boolean;
+  prop4: {
+    nested1: string;
+    nested2: number;
+    nested3: boolean;
+  };
+  prop5: Array<{
+    arrayItem1: string;
+    arrayItem2: number;
+    arrayItem3: boolean;
+  }>;
+}
+
+class LargeClass${i} implements LargeInterface${i} {
+  prop1: string = "test";
+  prop2: number = 123;
+  prop3: boolean = true;
+  prop4 = {
+    nested1: "test",
+    nested2: 123,
+    nested3: true
+  };
+  prop5: Array<{
+    arrayItem1: string;
+    arrayItem2: number;
+    arrayItem3: boolean;
+  }> = [{
+    arrayItem1: "test",
+    arrayItem2: 123,
+    arrayItem3: true
+  }];
+}
+
+const instance${i} = new LargeClass${i}();
+`;
+          });
+
+        const markdownBlocks = snippets.map((snippet) => wrapSnippet(snippet));
+        const markdown = markdownBlocks.join("\n");
+
+        await createProject({
+          markdownFiles: [{ name: "README.md", contents: markdown }],
+        });
+
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets()
+        ).to.eventually.satisfy(
+          (results: TypeScriptDocsVerifier.SnippetCompilationResult[]) => {
+            // We expect some results to have errors due to memory constraints
+            const hasErrors = results.some((result) => result.error);
+            expect(hasErrors).to.eql(true);
+
+            // Verify error messages contain memory-related information
+            const errorMessages = results
+              .filter((result) => result.error)
+              .map((result) => result.error?.message);
+
+            expect(
+              errorMessages.some(
+                (msg) =>
+                  msg?.toLowerCase().includes("memory") ||
+                  msg?.toLowerCase().includes("heap") ||
+                  msg?.toLowerCase().includes("allocation")
+              )
+            ).to.eql(true);
+
+            return true;
+          }
+        );
+      }
+    );
   });
 });
