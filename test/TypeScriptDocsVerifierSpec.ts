@@ -4,6 +4,7 @@ import * as FsExtra from "fs-extra";
 import { Gen } from "verify-it";
 import * as TypeScriptDocsVerifier from "../index";
 import { PackageDefinition } from "../src/PackageInfo";
+import { expect } from "chai";
 
 const workingDirectory = path.join(
   os.tmpdir(),
@@ -120,9 +121,9 @@ describe("TypeScriptDocsVerifier", () => {
       "returns an empty array if no code snippets are present",
       async () => {
         await createProject();
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          []
-        );
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets()
+        ).to.eventually.eql([]);
       }
     );
 
@@ -147,9 +148,9 @@ ${wrapSnippet(strings[3], "bash")}
             { name: "README.md", contents: noTypeScriptMarkdown },
           ],
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          []
-        );
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets()
+        ).to.eventually.eql([]);
       }
     );
 
@@ -158,10 +159,9 @@ ${wrapSnippet(strings[3], "bash")}
       Gen.string,
       async (filename) => {
         await createProject();
-        return await TypeScriptDocsVerifier.compileSnippets([
-          "README.md",
-          filename,
-        ]).should.be.rejectedWith(filename);
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets(["README.md", filename])
+        ).to.be.rejectedWith(filename);
       }
     );
 
@@ -174,9 +174,9 @@ ${wrapSnippet(strings[3], "bash")}
         await createProject({
           markdownFiles: [{ name: fileName, contents: typeScriptMarkdown }],
         });
-        return await TypeScriptDocsVerifier.compileSnippets(
-          fileName
-        ).should.eventually.eql([
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets(fileName)
+        ).to.eventually.eql([
           {
             file: fileName,
             index: 1,
@@ -196,9 +196,9 @@ ${wrapSnippet(strings[3], "bash")}
         await createProject({
           markdownFiles: [{ name: fileName, contents: typeScriptMarkdown }],
         });
-        return await TypeScriptDocsVerifier.compileSnippets(
-          fileName
-        ).should.eventually.eql([
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets(fileName)
+        ).to.eventually.eql([
           {
             file: fileName,
             index: 1,
@@ -232,9 +232,9 @@ export const bob = () => (<div></div>);
             },
           }),
         });
-        return await TypeScriptDocsVerifier.compileSnippets(
-          fileName
-        ).should.eventually.eql([
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets(fileName)
+        ).to.eventually.eql([
           {
             file: fileName,
             index: 1,
@@ -258,9 +258,9 @@ export const bob = () => (<div></div>);
         await createProject({
           markdownFiles: [{ name: fileName, contents: typeScriptMarkdown }],
         });
-        return await TypeScriptDocsVerifier.compileSnippets(
-          fileName
-        ).should.eventually.eql([]);
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets(fileName)
+        ).to.eventually.eql([]);
       }
     );
 
@@ -296,9 +296,9 @@ export const bob = () => (<div></div>);
         });
 
         await createProject({ markdownFiles: markdownFiles });
-        return await TypeScriptDocsVerifier.compileSnippets(
-          fileNames
-        ).should.eventually.eql(expected);
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets(fileNames)
+        ).to.eventually.eql(expected);
       }
     );
 
@@ -311,16 +311,16 @@ export const bob = () => (<div></div>);
         await createProject({
           markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets()
+        ).to.eventually.eql([
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
@@ -333,9 +333,9 @@ export const bob = () => (<div></div>);
         await createProject({
           markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
         });
-        return await TypeScriptDocsVerifier.compileSnippets(
-          []
-        ).should.eventually.eql([]);
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets([])
+        ).to.eventually.eql([]);
       }
     );
 
@@ -358,7 +358,7 @@ export const bob = () => (<div></div>);
           markdownFiles: [{ name: "README.md", contents: markdown }],
         });
         return () =>
-          TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
+          expect(TypeScriptDocsVerifier.compileSnippets()).to.eventually.eql(
             expected
           );
       }
@@ -375,16 +375,16 @@ export const bob = () => (<div></div>);
         await createProject({
           markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets()
+        ).to.eventually.eql([
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
@@ -395,7 +395,7 @@ export const bob = () => (<div></div>);
       await createProject({
         markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
       });
-      return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
+      return expect(TypeScriptDocsVerifier.compileSnippets()).to.eventually.eql(
         [
           {
             file: "README.md",
@@ -427,16 +427,16 @@ ${snippet}`;
         await createProject({
           markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets()
+        ).to.eventually.eql([
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
@@ -456,16 +456,16 @@ Gen.string()
         await createProject({
           markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets()
+        ).to.eventually.eql([
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
@@ -483,22 +483,24 @@ Gen.string()
         await createProject({
           markdownFiles: [{ name: "README.md", contents: markdown }],
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.satisfy(
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets()
+        ).to.eventually.satisfy(
           (results: TypeScriptDocsVerifier.SnippetCompilationResult[]) => {
-            results.should.have.length(2);
-            results[0].should.not.have.property("error");
+            expect(results).to.have.length(2);
+            expect(results[0]).to.not.have.property("error");
             const errorResult = results[1];
-            errorResult.should.have.property("file", "README.md");
-            errorResult.should.have.property("index", 2);
-            errorResult.should.have.property("snippet", invalidSnippet);
-            errorResult.should.have.property("error");
-            errorResult.linesWithErrors.should.deep.equal([1]);
-            errorResult?.error?.message.should.include("README.md");
-            errorResult?.error?.message.should.include("Code Block 2");
-            errorResult?.error?.message.should.not.include("block-");
+            expect(errorResult).to.have.property("file", "README.md");
+            expect(errorResult).to.have.property("index", 2);
+            expect(errorResult).to.have.property("snippet", invalidSnippet);
+            expect(errorResult).to.have.property("error");
+            expect(errorResult.linesWithErrors).to.deep.equal([1]);
+            expect(errorResult?.error?.message).to.include("README.md");
+            expect(errorResult?.error?.message).to.include("Code Block 2");
+            expect(errorResult?.error?.message).to.not.include("block-");
 
             Object.values(errorResult.error || {}).forEach((value: unknown) => {
-              (value as string).should.not.include("block-");
+              expect(value as string).to.not.include("block-");
             });
 
             return true;
@@ -527,22 +529,24 @@ Gen.string()
             },
           }),
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.satisfy(
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets()
+        ).to.eventually.satisfy(
           (results: TypeScriptDocsVerifier.SnippetCompilationResult[]) => {
-            results.should.have.length(2);
-            results[0].should.not.have.property("error");
+            expect(results).to.have.length(2);
+            expect(results[0]).to.not.have.property("error");
             const errorResult = results[1];
-            errorResult.should.have.property("file", "README.md");
-            errorResult.should.have.property("index", 2);
-            errorResult.should.have.property("snippet", invalidSnippet);
-            errorResult.should.have.property("error");
-            errorResult.linesWithErrors.should.deep.equal([1]);
-            errorResult?.error?.message.should.include("README.md");
-            errorResult?.error?.message.should.include("Code Block 2");
-            errorResult?.error?.message.should.not.include("block-");
+            expect(errorResult).to.have.property("file", "README.md");
+            expect(errorResult).to.have.property("index", 2);
+            expect(errorResult).to.have.property("snippet", invalidSnippet);
+            expect(errorResult).to.have.property("error");
+            expect(errorResult.linesWithErrors).to.deep.equal([1]);
+            expect(errorResult?.error?.message).to.include("README.md");
+            expect(errorResult?.error?.message).to.include("Code Block 2");
+            expect(errorResult?.error?.message).to.not.include("block-");
 
             Object.values(errorResult.error || {}).forEach((value: unknown) => {
-              (value as string).should.not.include("block-");
+              expect(value as string).to.not.include("block-");
             });
 
             return true;
@@ -571,21 +575,23 @@ console.log('This line is also OK');
         mainFile,
       });
 
-      return await TypeScriptDocsVerifier.compileSnippets().should.eventually.satisfy(
+      return expect(
+        TypeScriptDocsVerifier.compileSnippets()
+      ).to.eventually.satisfy(
         (results: TypeScriptDocsVerifier.SnippetCompilationResult[]) => {
-          results.should.have.length(1);
+          expect(results).to.have.length(1);
           const errorResult = results[0];
-          errorResult.should.have.property("file", "README.md");
-          errorResult.should.have.property("index", 1);
-          errorResult.should.have.property("snippet", invalidSnippet);
-          errorResult.should.have.property("error");
-          errorResult.linesWithErrors.should.deep.equal([4]);
-          errorResult?.error?.message.should.include("README.md");
-          errorResult?.error?.message.should.include("Code Block 1");
-          errorResult?.error?.message.should.not.include("block-");
+          expect(errorResult).to.have.property("file", "README.md");
+          expect(errorResult).to.have.property("index", 1);
+          expect(errorResult).to.have.property("snippet", invalidSnippet);
+          expect(errorResult).to.have.property("error");
+          expect(errorResult.linesWithErrors).to.deep.equal([4]);
+          expect(errorResult?.error?.message).to.include("README.md");
+          expect(errorResult?.error?.message).to.include("Code Block 1");
+          expect(errorResult?.error?.message).to.not.include("block-");
 
           Object.values(errorResult?.error || {}).forEach((value) => {
-            (value as string).should.not.include("block-");
+            expect(value as string).to.not.include("block-");
           });
 
           return true;
@@ -614,16 +620,16 @@ console.log('This line is also OK');
           markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
           mainFile,
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets()
+        ).to.eventually.eql([
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
@@ -661,16 +667,16 @@ console.log('This line is also OK');
             },
           }),
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets()
+        ).to.eventually.eql([
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
@@ -704,16 +710,16 @@ console.log('This line is also OK');
           mainFile,
           packageJson,
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets()
+        ).to.eventually.eql([
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
@@ -749,16 +755,16 @@ console.log('This line is also OK');
           mainFile,
           packageJson,
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets()
+        ).to.eventually.eql([
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
@@ -804,16 +810,16 @@ console.log('This line is also OK');
           packageJson,
         });
 
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets()
+        ).to.eventually.eql([
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
@@ -861,16 +867,16 @@ console.log('This line is also OK');
           packageJson,
         });
 
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets()
+        ).to.eventually.eql([
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
@@ -906,16 +912,16 @@ console.log('This line is also OK');
           mainFile,
           otherFiles: [otherFile],
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets()
+        ).to.eventually.eql([
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
@@ -957,16 +963,16 @@ console.log('This line is also OK');
           mainFile,
           otherFiles: [otherFile],
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets()
+        ).to.eventually.eql([
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
@@ -996,16 +1002,16 @@ console.log('This line is also OK');
             name: `@bbc/${defaultPackageJson.name}`,
           },
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets()
+        ).to.eventually.eql([
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
@@ -1045,16 +1051,16 @@ console.log('This line is also OK');
           },
           otherFiles: [otherFile],
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets()
+        ).to.eventually.eql([
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
@@ -1087,16 +1093,16 @@ console.log('This line is also OK');
           packageJson,
         };
         await createProject(projectFiles);
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets()
+        ).to.eventually.eql([
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
@@ -1136,9 +1142,9 @@ console.log('This line is also OK');
           "DOCS.md"
         );
 
-        return await TypeScriptDocsVerifier.compileSnippets([
-          pathToMarkdownFile,
-        ]).should.eventually.eql([
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets([pathToMarkdownFile])
+        ).to.eventually.eql([
           {
             file: pathToMarkdownFile,
             index: 1,
@@ -1158,9 +1164,9 @@ console.log('This line is also OK');
         await createProject({
           markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
         });
-        return await TypeScriptDocsVerifier.compileSnippets(
-          {}
-        ).should.eventually.eql([
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets({})
+        ).to.eventually.eql([
           {
             file: "README.md",
             index: 1,
@@ -1208,10 +1214,12 @@ console.log('This line is also OK');
           tsconfigJson
         );
 
-        return await TypeScriptDocsVerifier.compileSnippets({
-          markdownFiles: ["DOCS.md"],
-          project: tsconfigFilename,
-        }).should.eventually.eql([
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets({
+            markdownFiles: ["DOCS.md"],
+            project: tsconfigFilename,
+          })
+        ).to.eventually.eql([
           {
             file: "DOCS.md",
             index: 1,
@@ -1261,10 +1269,12 @@ console.log('This line is also OK');
           tsconfigJson
         );
 
-        return await TypeScriptDocsVerifier.compileSnippets({
-          project: path.join(tsconfigDirectory, tsconfigFile),
-          markdownFiles: ["DOCS.md"],
-        }).should.eventually.eql([
+        return expect(
+          TypeScriptDocsVerifier.compileSnippets({
+            project: path.join(tsconfigDirectory, tsconfigFile),
+            markdownFiles: ["DOCS.md"],
+          })
+        ).to.eventually.eql([
           {
             file: "DOCS.md",
             index: 1,
