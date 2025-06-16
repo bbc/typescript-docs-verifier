@@ -86,7 +86,9 @@ const b = 2;\`\`\``;
 
     it("should throw an error if the file does not exist", async () => {
       // file is never written
-      await expect(CodeBlockExtractor.extract(path.join(tmp, `INVALID-${Date.now()}.md`))).to.eventually.rejectedWith(Error, "ENOENT: no such file or directory");
+      await expect(
+        CodeBlockExtractor.extract(path.join(tmp, `INVALID-${Date.now()}.md`))
+      ).to.eventually.rejectedWith(Error, "ENOENT: no such file or directory");
     });
 
     it("should extract tsx code blocks", async () => {
@@ -101,7 +103,9 @@ const Component = () => <div>Hello</div>;
       const blocks = await CodeBlockExtractor.extract(filePath);
       expect(blocks).to.have.length(1);
       expect(blocks[0].type).to.equal("tsx");
-      expect(blocks[0].code.trim()).to.equal("const Component = () => <div>Hello</div>;");
+      expect(blocks[0].code.trim()).to.equal(
+        "const Component = () => <div>Hello</div>;"
+      );
     });
 
     it("should handle multiple code blocks with different types", async () => {
@@ -144,7 +148,9 @@ const c = 3;
 
       const blocks = await CodeBlockExtractor.extract(filePath);
       expect(blocks).to.have.length(1);
-      expect(blocks[0].code).to.equal("const a = 1;\nconst b = 2;\nconst c = 3;\n");
+      expect(blocks[0].code).to.equal(
+        "const a = 1;\nconst b = 2;\nconst c = 3;\n"
+      );
     });
 
     it("should ignore non-typescript code blocks", async () => {
@@ -176,5 +182,4 @@ const b = 2;
       expect(blocks[0].code).to.equal("const b = 2;\n");
     });
   });
-
 });

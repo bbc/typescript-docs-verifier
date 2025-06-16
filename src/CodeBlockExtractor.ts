@@ -14,41 +14,47 @@ export class CodeBlockExtractor {
   private constructor() {}
 
   /**
-   * Stream the file and extract code blocks without buffering the entire file.
-   * Returns an array of { code, type } in the order encountered.
+   * Extract all code blocks into an array (backward-compatible).
    */
   static async extract(
     markdownFilePath: string
   ): Promise<{ code: string; type: "tsx" | "ts" }[]> {
-    const codeBlocks: { code: string; type: "tsx" | "ts" }[] = [];
+    const blocks: { code: string; type: "tsx" | "ts" }[] = [];
+    for await (const block of this.iterateBlocks(markdownFilePath)) {
+      blocks.push(block);
+    }
+    return blocks;
+  }
+
+  /**
+   * Async generator that yields code blocks one-by-one with streaming regex parsing.
+   */
+  static async *iterateBlocks(
+    markdownFilePath: string
+  ): AsyncGenerator<{ code: string; type: "tsx" | "ts" }> {
     const pattern = this.TYPESCRIPT_CODE_PATTERN;
-      // eslint-disable-next-line functional/no-let
+    // eslint-disable-next-line functional/no-let
     let buffer = "";
 
-    const stream = fs.createReadStream(markdownFilePath, {
-      encoding: "utf-8",
-    });
-
+    const stream = fs.createReadStream(markdownFilePath, { encoding: "utf-8" });
     for await (const chunk of stream) {
       buffer += chunk;
+      // reset regex state
+      pattern.lastIndex = 0;
       // eslint-disable-next-line functional/no-let
       let match: RegExpExecArray | null;
-      // Reset lastIndex in case regex is reused
-      pattern.lastIndex = 0;
 
-      // Pull out all code blocks available in buffer
+      // pull out all complete code blocks
       while ((match = pattern.exec(buffer))) {
         const tsxType = match[1];
         const code = match[2];
         const type = tsxType === "tsx" ? "tsx" : "ts";
-        codeBlocks.push({ code, type });
+        yield { code, type };
 
-        // Remove processed content from buffer
+        // drop processed segment
         buffer = buffer.slice(match.index + match[0].length);
         pattern.lastIndex = 0;
       }
     }
-
-    return codeBlocks;
   }
 }

@@ -67,9 +67,7 @@ export class SnippetCompiler {
     substituter: LocalImportSubstituter
   ): AsyncGenerator<CodeBlock> {
     for (const file of files) {
-      for (const block of await this.extractFileCodeBlocks(file, substituter)) {
-        yield block;
-      }
+      yield* this.extractFileCodeBlocks(file, substituter);
     }
   }
 
@@ -125,20 +123,21 @@ export class SnippetCompiler {
     return await fsExtra.remove(this.workingDirectory);
   }
 
-  private async extractFileCodeBlocks(
+  private async *extractFileCodeBlocks(
     file: string,
     importSubstituter: LocalImportSubstituter
-  ): Promise<CodeBlock[]> {
-    const blocks = await CodeBlockExtractor.extract(file);
-    return blocks.map(({ code, type }, index) => {
-      return {
+  ): AsyncGenerator<CodeBlock> {
+    // eslint-disable-next-line functional/no-let
+    let index = 0;
+    for await (const { code, type } of CodeBlockExtractor.iterateBlocks(file)) {
+      yield {
         file,
         type,
         snippet: code,
-        index: index + 1,
+        index: ++index,
         sanitisedCode: this.sanitiseCodeBlock(importSubstituter, code),
       };
-    });
+    }
   }
 
   private sanitiseCodeBlock(
@@ -227,7 +226,9 @@ export class SnippetCompiler {
             ).length + 1;
           const iifeOffset = example.sanitisedCode.startsWith(
             "(function wrap() {"
-          ) ? 1 : 0;
+          )
+            ? 1
+            : 0;
 
           linesWithErrors.add(lineNumber - iifeOffset);
         });
