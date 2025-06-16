@@ -298,7 +298,7 @@ export const bob = () => (<div></div>);
         await createProject({ markdownFiles: markdownFiles });
         return expect(
           TypeScriptDocsVerifier.compileSnippets(fileNames)
-        ).to.eventually.eql(expected);
+        ).to.eventually.include.deep.members(expected);
       }
     );
 
@@ -488,20 +488,26 @@ Gen.string()
         ).to.eventually.satisfy(
           (results: TypeScriptDocsVerifier.SnippetCompilationResult[]) => {
             expect(results).to.have.length(2);
-            expect(results[0]).to.not.have.property("error");
-            const errorResult = results[1];
+
+            const errorResult = results.find((result) => result.error != null);
+            const nonErrorResult = results.find(
+              (result) => result.error == null
+            );
+            expect(nonErrorResult).to.not.have.property("error");
             expect(errorResult).to.have.property("file", "README.md");
             expect(errorResult).to.have.property("index", 2);
             expect(errorResult).to.have.property("snippet", invalidSnippet);
             expect(errorResult).to.have.property("error");
-            expect(errorResult.linesWithErrors).to.deep.equal([1]);
+            expect(errorResult?.linesWithErrors).to.deep.equal([1]);
             expect(errorResult?.error?.message).to.include("README.md");
             expect(errorResult?.error?.message).to.include("Code Block 2");
             expect(errorResult?.error?.message).to.not.include("block-");
 
-            Object.values(errorResult.error || {}).forEach((value: unknown) => {
-              expect(value as string).to.not.include("block-");
-            });
+            Object.values(errorResult?.error || {}).forEach(
+              (value: unknown) => {
+                expect(value as string).to.not.include("block-");
+              }
+            );
 
             return true;
           }
@@ -1286,13 +1292,13 @@ console.log('This line is also OK');
     );
 
     verify.it(
-      "does not run out of memory when processing large numbers of snippets",
+      "does not run out of memory when processing a large number of snippets",
       async () => {
-        // Create a large number of TypeScript snippets that will consume significant memory
-        const snippets = Array(50)
+        const snippetLength = 600;
+        const largeNumberOfSnippets = Array(snippetLength)
           .fill(null)
-          .map((_, i) => {
-            return `
+          .map(
+            (_, i) => `
 interface LargeInterface${i} {
   prop1: string;
   prop2: number;
@@ -1330,38 +1336,23 @@ class LargeClass${i} implements LargeInterface${i} {
 }
 
 const instance${i} = new LargeClass${i}();
-`;
-          });
-
-        const markdownBlocks = snippets.map((snippet) => wrapSnippet(snippet));
-        const markdown = markdownBlocks.join("\n");
+`
+          );
+        const markdownBlocks = largeNumberOfSnippets.map((snippet) =>
+          wrapSnippet(snippet)
+        );
+        const contents = markdownBlocks.join("\n");
 
         await createProject({
-          markdownFiles: [{ name: "README.md", contents: markdown }],
+          markdownFiles: [{ name: "README.md", contents }],
         });
 
         return expect(
           TypeScriptDocsVerifier.compileSnippets()
         ).to.eventually.satisfy(
           (results: TypeScriptDocsVerifier.SnippetCompilationResult[]) => {
-            // We expect some results to have errors due to memory constraints
-            const hasErrors = results.some((result) => result.error);
-            expect(hasErrors).to.eql(true);
-
-            // Verify error messages contain memory-related information
-            const errorMessages = results
-              .filter((result) => result.error)
-              .map((result) => result.error?.message);
-
-            expect(
-              errorMessages.some(
-                (msg) =>
-                  msg?.toLowerCase().includes("memory") ||
-                  msg?.toLowerCase().includes("heap") ||
-                  msg?.toLowerCase().includes("allocation")
-              )
-            ).to.eql(true);
-
+            expect(results).to.have.length(snippetLength);
+            expect(results.every((result) => !result.error)).to.eql(true);
             return true;
           }
         );

@@ -25,7 +25,7 @@ export type SnippetCompilationResult = {
 
 export class SnippetCompiler {
   private readonly compilerConfig: TSNode.CreateOptions;
-
+  private readonly compiler: TSNode.Service;
   constructor(
     private readonly workingDirectory: string,
     private readonly packageDefinition: PackageDefinition,
@@ -39,6 +39,7 @@ export class SnippetCompiler {
       ...(configOptions.config as TSNode.CreateOptions),
       transpileOnly: false,
     };
+    this.compiler = TSNode.create(this.compilerConfig);
   }
 
   private static loadTypeScriptConfig(
@@ -61,16 +62,60 @@ export class SnippetCompiler {
     return rawString.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
+  private async *generateBlocks(
+    files: string[],
+    substituter: LocalImportSubstituter
+  ): AsyncGenerator<CodeBlock> {
+    for (const file of files) {
+      for (const block of await this.extractFileCodeBlocks(file, substituter)) {
+        yield block;
+      }
+    }
+  }
+
   async compileSnippets(
-    documentationFiles: string[]
+    documentationFiles: string[],
+    { concurrency = 4 } = {}
   ): Promise<SnippetCompilationResult[]> {
     try {
       await this.cleanWorkingDirectory();
       await fsExtra.ensureDir(this.workingDirectory);
-      const examples = await this.extractAllCodeBlocks(documentationFiles);
-      return await Promise.all(
-        examples.map(async (example) => await this.testCodeCompilation(example))
+
+      const results: SnippetCompilationResult[] = [];
+      const importSubstituter = new LocalImportSubstituter(
+        this.packageDefinition
       );
+      const blockIterator = this.generateBlocks(
+        documentationFiles,
+        importSubstituter
+      );
+
+      // eslint-disable-next-line functional/no-let
+      let hasFailed = false;
+
+      const worker = async () => {
+        while (!hasFailed) {
+          const { value: block, done } = await blockIterator.next();
+          if (done || !block) {
+            return;
+          }
+
+          try {
+            const result = await this.testCodeCompilation(block);
+            results.push(result);
+            if (result.error) {
+              hasFailed = true;
+            }
+          } catch (err) {
+            hasFailed = true;
+            throw err;
+          }
+        }
+      };
+
+      await Promise.all(Array.from({ length: concurrency }, () => worker()));
+
+      return results.sort((a, b) => a.index - b.index);
     } finally {
       await this.cleanWorkingDirectory();
     }
@@ -78,20 +123,6 @@ export class SnippetCompiler {
 
   private async cleanWorkingDirectory() {
     return await fsExtra.remove(this.workingDirectory);
-  }
-
-  private async extractAllCodeBlocks(documentationFiles: string[]) {
-    const importSubstituter = new LocalImportSubstituter(
-      this.packageDefinition
-    );
-
-    const codeBlocks = await Promise.all(
-      documentationFiles.map(
-        async (file) =>
-          await this.extractFileCodeBlocks(file, importSubstituter)
-      )
-    );
-    return codeBlocks.flat();
   }
 
   private async extractFileCodeBlocks(
@@ -116,15 +147,26 @@ export class SnippetCompiler {
   ): string {
     const localisedBlock =
       importSubstituter.substituteLocalPackageImports(block);
-    return localisedBlock;
+
+    const moduleSyntaxRegex = /\b(import|export|declare\s+module|export\s*=)\b/;
+
+    const isModuleCode = moduleSyntaxRegex.test(localisedBlock);
+
+    // TODO: allow preventing of wrapping if the block is marked with <!-- ts-docs-verifier:no-wrap -->
+    if (isModuleCode) {
+      // keep block as is if recognized as module code (it won't be valid if wrapped in an IIFE)
+      return localisedBlock;
+    }
+
+    // otherwise wrap in function scope to isolate types, @see https://github.com/bbc/typescript-docs-verifier/issues/30
+    return `(function wrap() {\n${localisedBlock}\n})();`;
   }
 
   private async compile(code: string, type: "ts" | "tsx"): Promise<void> {
     const id = process.hrtime.bigint().toString();
     const codeFile = path.join(this.workingDirectory, `block-${id}.${type}`);
     await fsExtra.writeFile(codeFile, code);
-    const compiler = TSNode.create(this.compilerConfig);
-    compiler.compile(code, codeFile);
+    this.compiler.compile(code, codeFile);
   }
 
   private removeTemporaryFilePaths(
@@ -183,7 +225,11 @@ export class SnippetCompiler {
             [...example.sanitisedCode.substring(0, start)].filter(
               (char) => char === "\n"
             ).length + 1;
-          linesWithErrors.add(lineNumber);
+          const iifeOffset = example.sanitisedCode.startsWith(
+            "(function wrap() {"
+          ) ? 1 : 0;
+
+          linesWithErrors.add(lineNumber - iifeOffset);
         });
       }
 
