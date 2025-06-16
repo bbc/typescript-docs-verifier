@@ -86,7 +86,7 @@ const b = 2;\`\`\``;
 
     it("should throw an error if the file does not exist", async () => {
       // file is never written
-      await expect(CodeBlockExtractor.extract(path.join(tmp, `INVALID-${Date.now()}.md`))).to.eventually.rejectedWith(Error, "Error extracting code blocks from");
+      await expect(CodeBlockExtractor.extract(path.join(tmp, `INVALID-${Date.now()}.md`))).to.eventually.rejectedWith(Error, "ENOENT: no such file or directory");
     });
 
     it("should extract tsx code blocks", async () => {
