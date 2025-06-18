@@ -4,6 +4,7 @@ import * as FsExtra from "fs-extra";
 import { Gen } from "verify-it";
 import * as TypeScriptDocsVerifier from "../index";
 import { PackageDefinition } from "../src/PackageInfo";
+import "chai/register-should";
 
 const workingDirectory = path.join(
   os.tmpdir(),
