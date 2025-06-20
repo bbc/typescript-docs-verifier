@@ -10,27 +10,27 @@ const defaultPackageInfo = {
 const scenarios = [
   {
     importLine: `import something from 'awesome'`,
-    expected: `import something from '/path/to/package/index'`,
+    expected: `import something from '/path/to/package/index.ts'`,
     name: "single quotes",
   },
   {
     importLine: `import something from 'awesome';`,
-    expected: `import something from '/path/to/package/index'`,
+    expected: `import something from '/path/to/package/index.ts'`,
     name: "a trailing semicolon",
   },
   {
     importLine: `import something from "awesome"`,
-    expected: `import something from "/path/to/package/index"`,
+    expected: `import something from "/path/to/package/index.ts"`,
     name: "double quotes",
   },
   {
     importLine: `import something from "awesome"      `,
-    expected: `import something from "/path/to/package/index"`,
+    expected: `import something from "/path/to/package/index.ts"`,
     name: "trailing whitespace",
   },
   {
     importLine: `import something from 'awesome'`,
-    expected: `import something from '/path/to/package/main'`,
+    expected: `import something from '/path/to/package/main.ts'`,
     packageInfo: {
       exports: "main.ts",
     },
@@ -38,7 +38,7 @@ const scenarios = [
   },
   {
     importLine: `import something from 'awesome'`,
-    expected: `import something from '/path/to/package/main'`,
+    expected: `import something from '/path/to/package/main.ts'`,
     packageInfo: {
       exports: {
         ".": "main.ts",
@@ -48,7 +48,7 @@ const scenarios = [
   },
   {
     importLine: `import something from 'awesome'`,
-    expected: `import something from '/path/to/package/main'`,
+    expected: `import something from '/path/to/package/main.ts'`,
     packageInfo: {
       exports: {
         "node-addons": "main.ts",
@@ -58,7 +58,7 @@ const scenarios = [
   },
   {
     importLine: `import something from 'awesome'`,
-    expected: `import something from '/path/to/package/main'`,
+    expected: `import something from '/path/to/package/main.ts'`,
     packageInfo: {
       exports: {
         node: "main.ts",
@@ -68,7 +68,7 @@ const scenarios = [
   },
   {
     importLine: `import something from 'awesome'`,
-    expected: `import something from '/path/to/package/main'`,
+    expected: `import something from '/path/to/package/main.ts'`,
     packageInfo: {
       exports: {
         require: "main.ts",
@@ -78,7 +78,7 @@ const scenarios = [
   },
   {
     importLine: `import something from 'awesome'`,
-    expected: `import something from '/path/to/package/main'`,
+    expected: `import something from '/path/to/package/main.ts'`,
     packageInfo: {
       exports: {
         default: "main.ts",
@@ -88,7 +88,7 @@ const scenarios = [
   },
   {
     importLine: `import something from 'awesome'`,
-    expected: `import something from '/path/to/package/main'`,
+    expected: `import something from '/path/to/package/main.ts'`,
     packageInfo: {
       exports: {
         ".": {
@@ -100,7 +100,7 @@ const scenarios = [
   },
   {
     importLine: `import something from 'awesome'`,
-    expected: `import something from '/path/to/package/main'`,
+    expected: `import something from '/path/to/package/main.ts'`,
     packageInfo: {
       exports: {
         ".": {
@@ -112,7 +112,7 @@ const scenarios = [
   },
   {
     importLine: `import something from 'awesome'`,
-    expected: `import something from '/path/to/package/main'`,
+    expected: `import something from '/path/to/package/main.ts'`,
     packageInfo: {
       exports: {
         ".": {
@@ -124,7 +124,7 @@ const scenarios = [
   },
   {
     importLine: `import something from 'awesome/some/path'`,
-    expected: `import something from '/path/to/package/internal/path'`,
+    expected: `import something from '/path/to/package/internal/path.ts'`,
     packageInfo: {
       exports: {
         ".": "main.ts",
@@ -135,7 +135,7 @@ const scenarios = [
   },
   {
     importLine: `import something from 'awesome/some/path'`,
-    expected: `import something from '/path/to/package/internal/path'`,
+    expected: `import something from '/path/to/package/internal/path.ts'`,
     packageInfo: {
       exports: {
         ".": "main.ts",
@@ -148,7 +148,7 @@ const scenarios = [
   },
   {
     importLine: `import something from 'awesome/lib/some/thing'`,
-    expected: `import something from '/path/to/package/internal/some/thing'`,
+    expected: `import something from '/path/to/package/internal/some/thing.ts'`,
     packageInfo: {
       exports: {
         ".": "main.ts",
@@ -159,7 +159,7 @@ const scenarios = [
   },
   {
     importLine: `import something from 'awesome/lib/some/thing'`,
-    expected: `import something from '/path/to/package/internal/some/thing'`,
+    expected: `import something from '/path/to/package/internal/some/thing.ts'`,
     packageInfo: {
       exports: {
         ".": "main.ts",
@@ -172,7 +172,7 @@ const scenarios = [
   },
   {
     importLine: `import something from '@my-scope/awesome'`,
-    expected: `import something from '/path/to/package/index'`,
+    expected: `import something from '/path/to/package/index.ts'`,
     name: "a scoped package name",
     packageName: "@my-scope/awesome",
   },

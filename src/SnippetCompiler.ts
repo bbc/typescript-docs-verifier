@@ -1,11 +1,9 @@
-import * as path from "path";
-import chalk from "chalk";
-import * as tsconfig from "tsconfig";
-import * as fsExtra from "fs-extra";
-import * as TSNode from "ts-node";
+import fs from "fs";
+import ts from "typescript";
 import { PackageDefinition } from "./PackageInfo";
 import { CodeBlockExtractor } from "./CodeBlockExtractor";
 import { LocalImportSubstituter } from "./LocalImportSubstituter";
+import { compile } from "./CodeCompiler";
 
 type CodeBlock = {
   readonly file: string;
@@ -20,11 +18,26 @@ export type SnippetCompilationResult = {
   readonly index: number;
   readonly snippet: string;
   readonly linesWithErrors: number[];
-  readonly error?: TSNode.TSError | Error;
+  readonly error?: CompilationError | Error;
 };
 
+export class CompilationError extends Error {
+  diagnosticCodes: number[];
+  name: string;
+  diagnosticText: string;
+  diagnostics: ts.Diagnostic[];
+
+  constructor(diagnosticText: string, diagnostics?: ts.Diagnostic[]) {
+    super(diagnosticText);
+    this.name = this.constructor.name;
+    this.diagnosticText = diagnosticText;
+    this.diagnosticCodes = diagnostics?.map(({ code }) => code) ?? [];
+    this.diagnostics = diagnostics ?? [];
+  }
+}
+
 export class SnippetCompiler {
-  private readonly compilerConfig: TSNode.CreateOptions;
+  private readonly compilerOptions: ts.CompilerOptions;
 
   constructor(
     private readonly workingDirectory: string,
@@ -35,49 +48,64 @@ export class SnippetCompiler {
       packageDefinition.packageRoot,
       project
     );
-    this.compilerConfig = {
-      ...(configOptions.config as TSNode.CreateOptions),
-      transpileOnly: false,
-    };
+    this.compilerOptions = configOptions.options;
   }
 
   private static loadTypeScriptConfig(
     packageRoot: string,
     project?: string
-  ): {
-    config: unknown;
-  } {
-    const fullProjectPath = path.join(packageRoot, project ?? "");
-    const { base, dir } = path.parse(fullProjectPath);
+  ): ts.ParsedCommandLine {
+    const configFile = ts.findConfigFile(
+      packageRoot,
+      ts.sys.fileExists,
+      project
+    );
 
-    const typeScriptConfig = tsconfig.loadSync(dir, base);
-    if (typeScriptConfig?.config?.compilerOptions) {
-      typeScriptConfig.config.compilerOptions.noUnusedLocals = false;
+    if (!configFile) {
+      throw new Error(
+        `Unable to find TypeScript configuration file in ${packageRoot}`
+      );
     }
-    return typeScriptConfig;
-  }
 
-  private static escapeRegExp(rawString: string): string {
-    return rawString.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  }
+    const fileContents = fs.readFileSync(configFile, "utf-8");
+    const { config: configJSON, error } = ts.parseConfigFileTextToJson(
+      configFile,
+      fileContents
+    );
 
+    if (error) {
+      throw new Error(
+        `Error reading tsconfig from ${configFile}: ${ts.flattenDiagnosticMessageText(error.messageText, ts.sys.newLine)}`
+      );
+    }
+
+    const parsedConfig = ts.parseJsonConfigFileContent(
+      configJSON,
+      {
+        fileExists: ts.sys.fileExists,
+        readDirectory: ts.sys.readDirectory,
+        readFile: ts.sys.readFile,
+        useCaseSensitiveFileNames: ts.sys.useCaseSensitiveFileNames,
+      },
+      packageRoot
+    );
+
+    return parsedConfig;
+  }
   async compileSnippets(
     documentationFiles: string[]
   ): Promise<SnippetCompilationResult[]> {
-    try {
-      await this.cleanWorkingDirectory();
-      await fsExtra.ensureDir(this.workingDirectory);
-      const examples = await this.extractAllCodeBlocks(documentationFiles);
-      return await Promise.all(
-        examples.map(async (example) => await this.testCodeCompilation(example))
-      );
-    } finally {
-      await this.cleanWorkingDirectory();
-    }
-  }
+    const results: SnippetCompilationResult[] = [];
+    const examples = await this.extractAllCodeBlocks(documentationFiles);
 
-  private async cleanWorkingDirectory() {
-    return await fsExtra.remove(this.workingDirectory);
+    for (const example of examples) {
+      const result = await this.testCodeCompilation(example);
+      results.push(result);
+
+      // Yield to event loop
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+    return results;
   }
 
   private async extractAllCodeBlocks(documentationFiles: string[]) {
@@ -119,78 +147,78 @@ export class SnippetCompiler {
     return localisedBlock;
   }
 
-  private async compile(code: string, type: "ts" | "tsx"): Promise<void> {
-    const id = process.hrtime.bigint().toString();
-    const codeFile = path.join(this.workingDirectory, `block-${id}.${type}`);
-    await fsExtra.writeFile(codeFile, code);
-    const compiler = TSNode.create(this.compilerConfig);
-    compiler.compile(code, codeFile);
-  }
-
-  private removeTemporaryFilePaths(
-    message: string,
-    example: CodeBlock
-  ): string {
-    const escapedCompiledDocsFolder = SnippetCompiler.escapeRegExp(
-      path.basename(this.workingDirectory)
-    );
-    const compiledDocsFilePrefixPattern = new RegExp(
-      `${escapedCompiledDocsFolder}/block-\\d+\\.ts`,
-      "g"
-    );
-    return message.replace(
-      compiledDocsFilePrefixPattern,
-      chalk`{blue ${example.file}} → {cyan Code Block ${example.index}}`
-    );
-  }
-
   private async testCodeCompilation(
     example: CodeBlock
   ): Promise<SnippetCompilationResult> {
     try {
-      await this.compile(example.sanitisedCode, example.type);
+      const { hasError, diagnostics } = await compile({
+        compilerOptions: this.compilerOptions,
+        workingDirectory: this.workingDirectory,
+        code: example.sanitisedCode,
+        type: example.type,
+      });
+
+      if (!hasError) {
+        return {
+          snippet: example.snippet,
+          file: example.file,
+          index: example.index,
+          linesWithErrors: [],
+        };
+      }
+
+      const linesWithErrors = new Set<number>();
+
+      const enrichedDiagnostics = diagnostics.map((diagnostic) => {
+        if (typeof diagnostic.start !== "undefined") {
+          const startLine =
+            [...example.sanitisedCode.substring(0, diagnostic.start)].filter(
+              (char) => char === ts.sys.newLine
+            ).length + 1;
+          linesWithErrors.add(startLine);
+        }
+
+        return {
+          ...diagnostic,
+          file: diagnostic.file
+            ? {
+                ...diagnostic.file,
+                fileName: `${example.file} → Code Block ${example.index}`,
+              }
+            : undefined,
+        };
+      });
+
+      const formatter = process.stdout.isTTY
+        ? ts.formatDiagnosticsWithColorAndContext
+        : ts.formatDiagnostics;
+
+      const diagnosticText = formatter(enrichedDiagnostics, {
+        getCanonicalFileName: (fileName) => fileName,
+        getCurrentDirectory: () => this.workingDirectory,
+        getNewLine: () => ts.sys.newLine,
+      });
+
+      const error = new CompilationError(
+        `⨯ Unable to compile TypeScript:\n${diagnosticText}`,
+        enrichedDiagnostics
+      );
+
       return {
         snippet: example.snippet,
         file: example.file,
+        error: error,
         index: example.index,
-        linesWithErrors: [],
+        linesWithErrors: [...linesWithErrors],
       };
     } catch (rawError) {
       const error =
         rawError instanceof Error ? rawError : new Error(String(rawError));
-      error.message = this.removeTemporaryFilePaths(error.message, example);
-
-      Object.entries(error).forEach(([key, value]) => {
-        if (typeof value === "string") {
-          error[key as keyof typeof error] = this.removeTemporaryFilePaths(
-            value,
-            example
-          );
-        }
-      });
-
-      const linesWithErrors = new Set<number>();
-
-      if (error instanceof TSNode.TSError) {
-        error.diagnostics.forEach((diagnostic) => {
-          const { start } = diagnostic;
-
-          if (typeof start === "undefined") {
-            return;
-          }
-
-          const lineNumber =
-            [...example.sanitisedCode.substring(0, start)].filter(
-              (char) => char === "\n"
-            ).length + 1;
-          linesWithErrors.add(lineNumber);
-        });
-      }
 
       return {
         snippet: example.snippet,
         error: error,
-        linesWithErrors: [...linesWithErrors],
+        linesWithErrors: [],
         file: example.file,
         index: example.index,
       };

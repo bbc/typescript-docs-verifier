@@ -1,5 +1,5 @@
 import * as path from "path";
-import * as fsExtra from "fs-extra";
+import { readFile } from "fs/promises";
 
 export type SubpathPattern = "." | string;
 
@@ -36,7 +36,7 @@ const searchParentsForPackage = async (
   currentPath: string
 ): Promise<string> => {
   try {
-    await fsExtra.readFile(path.join(currentPath, "package.json"));
+    await readFile(path.join(currentPath, "package.json"));
     return currentPath;
   } catch {
     const parentPath = path.dirname(currentPath);
@@ -60,7 +60,7 @@ export class PackageInfo {
   static async read(): Promise<PackageDefinition> {
     const packageRoot = await searchParentsForPackage(process.cwd());
     const packageJsonPath = path.join(packageRoot, "package.json");
-    const contents = await fsExtra.readFile(packageJsonPath, "utf-8");
+    const contents = await readFile(packageJsonPath, "utf-8");
     const packageInfo = JSON.parse(contents);
 
     return {
