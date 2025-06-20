@@ -1,4 +1,3 @@
-import * as path from "path";
 import { PackageInfo } from "./src/PackageInfo";
 import {
   SnippetCompiler,
@@ -40,12 +39,8 @@ export async function compileSnippets(
   const { project, markdownFiles } = parseArguments(args);
 
   const packageDefinition = await PackageInfo.read();
-  const compiledDocsFolder = path.join(
-    packageDefinition.packageRoot,
-    ".tmp-compiled-docs"
-  );
   const compiler = new SnippetCompiler(
-    compiledDocsFolder,
+    packageDefinition.packageRoot,
     packageDefinition,
     project
   );

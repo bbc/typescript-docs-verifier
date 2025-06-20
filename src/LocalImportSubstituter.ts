@@ -101,21 +101,17 @@ class ExportResolver {
     );
   }
 
-  stripSuffix(filePath: string): string {
-    return filePath.replace(/\.(tsx?|js)$/, "");
-  }
-
   resolveExportPath(path?: string): string {
     if (!this.packageExports) {
       if (!this.packageMain) {
         throw new Error("Failed to find main or exports entry in package.json");
       }
 
-      return path ?? this.stripSuffix(this.packageMain);
+      return path ?? this.packageMain;
     }
 
     const matchingExport = this.findMatchingExport(path);
-    return this.stripSuffix(matchingExport);
+    return matchingExport;
   }
 }
 

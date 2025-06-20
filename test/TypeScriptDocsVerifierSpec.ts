@@ -14,7 +14,7 @@ const fixturePath = path.join(__dirname, "fixtures");
 
 const defaultPackageJson = {
   name: Gen.string(),
-  main: `${Gen.string()}.ts`,
+  main: `${Gen.string()}.js`,
 };
 const defaultMainFile = {
   name: defaultPackageJson.main,
@@ -595,7 +595,7 @@ console.log('This line is also OK');
     });
 
     verify.it(
-      "localises imports of the current package if the package main is a ts file",
+      "localises imports of the current package if the package main is a js file",
       async () => {
         const snippet = `
           import { MyClass } from '${defaultPackageJson.name}'
@@ -629,7 +629,7 @@ console.log('This line is also OK');
     );
 
     verify.it(
-      "localises imports of the current package if the package main is a tsx file",
+      "localises imports of the current package if the package main is a jsx file",
       async () => {
         const snippet = `
           import React from 'react';
@@ -651,7 +651,7 @@ console.log('This line is also OK');
           mainFile,
           packageJson: {
             ...defaultPackageJson,
-            main: "main.tsx",
+            main: "main.jsx",
           },
           tsConfig: JSON.stringify({
             ...defaultTsConfig,
@@ -835,6 +835,8 @@ console.log('This line is also OK');
               }
             }`,
         };
+        const otherTranspiledFile = path.join(sourceFolder, "other.js");
+
         const otherFile = {
           name: path.join(sourceFolder, "other.ts"),
           contents: `
@@ -849,7 +851,7 @@ console.log('This line is also OK');
           ...defaultPackageJson,
           exports: {
             "./some/export": {
-              require: otherFile.name,
+              require: otherTranspiledFile,
             },
           },
           main: "some/other/file.js",
@@ -952,7 +954,7 @@ console.log('This line is also OK');
         await createProject({
           packageJson: {
             name: "lib",
-            main: "lib.ts",
+            main: "lib.js",
           },
           markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
           mainFile,
@@ -1149,6 +1151,76 @@ console.log('This line is also OK');
         ]);
       }
     );
+
+    verify.it("handles a non-JSON content in tsconfig.json file", async () => {
+      const snippet = `
+          import { MyClass } from '${defaultPackageJson.name}'
+          await Promise.resolve();
+          const instance = new MyClass()
+          instance.doStuff()`;
+      const mainFile = {
+        name: `${defaultPackageJson.main}`,
+        contents: `
+            export class MyClass {
+              doStuff (): void {
+                return
+              }
+            }`,
+      };
+
+      const typeScriptMarkdown = wrapSnippet(snippet);
+      await createProject({
+        markdownFiles: [{ name: "DOCS.md", contents: typeScriptMarkdown }],
+        mainFile,
+      });
+
+      const tsconfigFilename = `tsconfig.json`;
+      const tsconfigText = `{
+        "compilerOptions": {
+          "target": "es2019", // comments are permitted!
+          "module": "esnext",
+        },
+      }`;
+
+      await FsExtra.writeFile(
+        path.join(workingDirectory, tsconfigFilename),
+        tsconfigText
+      );
+
+      return await TypeScriptDocsVerifier.compileSnippets({
+        markdownFiles: ["DOCS.md"],
+        project: tsconfigFilename,
+      }).should.eventually.eql([
+        {
+          file: "DOCS.md",
+          index: 1,
+          snippet,
+          linesWithErrors: [],
+        },
+      ]);
+    });
+
+    verify.it("returns an error if the tsconfig file is invalid", async () => {
+      await createProject();
+
+      const tsconfigFilename = `tsconfig.json`;
+      const tsconfigText = `{
+        "compilerOptions": {
+          "target": "es2019",
+          "module": "esnext",
+        },
+      `;
+
+      await FsExtra.writeFile(
+        path.join(workingDirectory, tsconfigFilename),
+        tsconfigText
+      );
+
+      return await TypeScriptDocsVerifier.compileSnippets({
+        markdownFiles: ["DOCS.md"],
+        project: tsconfigFilename,
+      }).should.be.rejectedWith("Error reading tsconfig from");
+    });
 
     verify.it(
       "uses the default settings if an empty object is supplied",
