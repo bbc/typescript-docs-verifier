@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [3.0.1]
+
+### Changed
+
+- Fix compilation errors when `rootDir` is used in `tsconfig.json`
+- Ensure compiler option diagnostics are reported in the error output
+
 ## [3.0.0]
 
 ### Added

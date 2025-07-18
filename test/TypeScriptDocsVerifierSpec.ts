@@ -389,6 +389,35 @@ export const bob = () => (<div></div>);
       }
     );
 
+    verify.it(
+      "compiles snippets when rootDir is a compiler option",
+      genSnippet,
+      Gen.word,
+      async (snippet, rootDir) => {
+        const typeScriptMarkdown = wrapSnippet(snippet);
+        await createProject({
+          markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
+          tsConfig: JSON.stringify({
+            ...defaultTsConfig,
+            compilerOptions: {
+              ...defaultTsConfig,
+              rootDir,
+            },
+          }),
+        });
+        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
+          [
+            {
+              file: "README.md",
+              index: 1,
+              snippet,
+              linesWithErrors: [],
+            },
+          ]
+        );
+      }
+    );
+
     verify.it("compiles snippets independently", async () => {
       const snippet1 = `interface Foo { bar: 123 }`;
       const snippet2 = `interface Foo { bar: () => void }`;
