@@ -61,58 +61,65 @@ Individual code blocks can be ignored by preceding them with a `<!-- ts-docs-ver
 node_modules/.bin/typescript-docs-verifier [--input-files <markdown-files-to-test>] [--project <path-to-tsconfig-file>]
 ```
 
-* `--input-files` is optional and defaults to `README.md`.
-* `--project` is optional and defaults to the `tsconfig.json` file in the package root.
-* Any compilation errors will be reported on the console.
-* The exit code is 1 if there are any compilation errors and 0 otherwise.
+- `--input-files` is optional and defaults to `README.md`.
+- `--project` is optional and defaults to the `tsconfig.json` file in the package root.
+- Any compilation errors will be reported on the console.
+- The exit code is 1 if there are any compilation errors and 0 otherwise.
 
 ## Library usage
 
 ### TypeScript
 
 ```typescript
-import { compileSnippets, SnippetCompilationResult } from 'typescript-docs-verifier'
-import * as http from 'http'
+import {
+  compileSnippets,
+  SnippetCompilationResult,
+} from "typescript-docs-verifier";
+import * as http from "http";
 
-const markdownFiles = ['README', 'examples.md'] // defaults to 'README.md' if not provided
-const tsconfigPath = 'docs-tsconfig.json' // defaults to the 'tsconfig.json' file in the package root
+const markdownFiles = ["README", "examples.md"]; // defaults to 'README.md' if not provided
+const tsconfigPath = "docs-tsconfig.json"; // defaults to the 'tsconfig.json' file in the package root
 compileSnippets({ markdownFiles, project: tsconfigPath })
   .then((results: SnippetCompilationResult[]) => {
     results.forEach((result: SnippetCompilationResult) => {
       if (result.error) {
-        console.log(`Error compiling example code block ${result.index} in file ${result.file}`)
-        console.log(result.error.message)
-        console.log('Original code:')
-        console.log(result.snippet)
+        console.log(
+          `Error compiling example code block ${result.index} in file ${result.file}`
+        );
+        console.log(result.error.message);
+        console.log("Original code:");
+        console.log(result.snippet);
       }
-    })
+    });
   })
   .catch((error: unknown) => {
-    console.error('Error compiling TypeScript snippets', error)
-  })
+    console.error("Error compiling TypeScript snippets", error);
+  });
 ```
 
 ### JavaScript
 
 ```javascript
-const { compileSnippets } = require('typescript-docs-verifier')
+const { compileSnippets } = require("typescript-docs-verifier");
 
-const markdownFiles = ['README.md', 'examples.md'] // defaults to 'README.md' if not provided
-const tsconfigPath = 'docs-tsconfig.json' // defaults to the 'tsconfig.json' file in the package root
+const markdownFiles = ["README.md", "examples.md"]; // defaults to 'README.md' if not provided
+const tsconfigPath = "docs-tsconfig.json"; // defaults to the 'tsconfig.json' file in the package root
 compileSnippets({ markdownFiles, project: tsconfigPath })
   .then((results) => {
     results.forEach((result) => {
       if (result.error) {
-        console.log(`Error compiling example code block ${result.index} in file ${result.file}`)
-        console.log(result.error.message)
-        console.log('Original code:')
-        console.log(result.snippet)
+        console.log(
+          `Error compiling example code block ${result.index} in file ${result.file}`
+        );
+        console.log(result.error.message);
+        console.log("Original code:");
+        console.log(result.snippet);
       }
-    })
+    });
   })
   .catch((error) => {
-    console.error('Error compiling TypeScript snippets', error)
-  })
+    console.error("Error compiling TypeScript snippets", error);
+  });
 ```
 
 ## Development
