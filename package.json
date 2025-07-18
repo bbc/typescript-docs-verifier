@@ -18,7 +18,7 @@
     "typescript",
     "verify"
   ],
-  "version": "2.5.3",
+  "version": "3.0.0",
   "main": "dist/index.js",
   "@types": "dist/index.d.ts",
   "bin": {
@@ -35,7 +35,7 @@
   },
   "homepage": "https://github.com/bbc/typescript-docs-verifier#readme",
   "engines": {
-    "node": ">=12"
+    "node": ">=20"
   },
   "scripts": {
     "format": "prettier --write '**/*.ts' '**/*.json'",
@@ -54,7 +54,7 @@
     "@types/chai-as-promised": "^8.0.1",
     "@types/fs-extra": "^11.0.4",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^16.11.59",
+    "@types/node": "^20.19.1",
     "@types/react": "^18.2.12",
     "@types/yargs": "^17.0.12",
     "@typescript-eslint/eslint-plugin": "^8.24.0",
@@ -66,25 +66,23 @@
     "eslint-plugin-functional": "^6.6.3",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^7.2.1",
+    "fs-extra": "^11.3.0",
     "mocha": "^11.1.0",
     "npm-run-all2": "^7.0.2",
     "nyc": "^17.1.0",
     "prettier": "^3.5.1",
     "react": "^18.2.0",
-    "typescript": "^4.7.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^4.7.2",
     "verify-it": "^2.3.3"
   },
   "dependencies": {
     "chalk": "^4.1.2",
-    "fs-extra": "^10.0.0",
     "ora": "^5.4.1",
-    "strip-ansi": "^7.0.1",
-    "ts-node": "^10.8.1",
-    "tsconfig": "^7.0.0",
     "yargs": "^17.5.1"
   },
   "peerDependencies": {
-    "typescript": ">3.8.3"
+    "typescript": ">=4.7.2"
   },
   "files": [
     "dist/index.js",

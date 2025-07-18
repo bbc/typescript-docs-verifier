@@ -1,4 +1,5 @@
 # Changelog
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -6,81 +7,132 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-## [2.5.3]
+## [3.0.0]
+
+### Added
+
+- Support for `import` statements split across multiple lines in snippets
+
 ### Changed
+
+- Remove dependency on `ts-node` to avoid memory issues when compiling many snippets.
+  - **[BREAKING]** Compilation errors are now `CompilationError` instances, not `TSNode.TSError` instances
+- Compile snippets in series to avoid memory issues.
+
+### Removed
+
+- **[BREAKING]** Support for TypeScript versions <4.7.2
+- **[BREAKING]** Support for Node.js <20
+- Production dependency on `tsconfig` and `strip-ansi` and `fs-extra`
+
+## [2.5.3]
+
+### Changed
+
 - Use a separate `ts-node` compiler per-snippet to ensure that compilation of snippets is independent
 
 ## [2.5.2]
+
 ### Removed
+
 - Obsolete Travis CI build badge from README
 
 ## [2.5.1]
+
 ### Added
+
 - Override any project-specific `ts-node` `transpileOnly` to force type checking when compiling code snippets
 
 ## [2.5.0]
+
 ### Added
+
 - Support for `tsx` snippets
 
 ## [2.4.1]
+
 ### Changed
+
 - Various fixes for Windows environments
 
 ## [2.4.0]
+
 ### Added
+
 - A new `--project` option that overrides the `tsconfig.json` file to be used when compiling snippets
 
 ## [2.3.1]
+
 ### Changed
+
 - Update dependencies
 
 ## [2.3.0]
+
 ### Added
+
 - Support for `exports` in `package.json` including wildcard subpaths
 
 ### Changed
+
 - Compile documentation snippets in the project folder so that dependent packages can be resolved reliably even in nested projects
 
 ## [2.2.2]
+
 ### Changed
+
 - Unpinned `ts-node` dependency to fix issues with the most recent TypeScript versions (required the extraction of the line numbers of compilation errors to be changed)
 
 ## [2.2.1]
+
 ### Added
+
 - Allow code blocks to be ignored by preceding them with a `<!-- ts-docs-verifier:ignore -->` comment
 
 ## [2.2.0]
+
 ### Changed
+
 - Link project `node_modules` to snippet compilation directory so you can import from the current project's dependencies in snippets
 
 ### Added
+
 - Support for importing sub-paths within packages
 - Support for scoped package names
 
 ## [2.1.0]
+
 ### Changed
+
 - No longer wrap TypeScript code blocks in functions before compilation
 - Write temporary files to the OS temporary directory
 
 ### Added
+
 - An 1-indexed `index` property to the `CodeBlock` type to indicate where in the file the code block was found
 - Add a `linesWithErrors` property to the compilation result to indicate which lines contained errors
 
 ## [2.0.1] - 2021-10-08
+
 ### Changed
+
 - Updated dependencies (including dropping `tslint` in favour of `eslint`)
   - Pin to version 5.x.x of `ora` to avoid issues with ESM
 
 ## [2.0.0-rc.1] - 2021-09-27
+
 ### Added
+
 - Support for TypeScript code blocked marked with \`\`\`ts as well as ```typescript
 - This changelog 🎉
 
 ### Changed
+
 - [BREAKING] TypeScript is now a peerDependency and must be installed by the client.
 - Tagging of the source is now done using a `release` branch.
 - Migrated code to `async` / `await`.
 
 ### Removed
+
 - [BREAKING] Support for NodeJS versions prior to version 12.
 - Bluebird dependency.
