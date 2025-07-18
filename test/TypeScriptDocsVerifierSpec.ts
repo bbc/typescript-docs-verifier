@@ -1104,6 +1104,95 @@ console.log('This line is also OK');
     );
 
     verify.it(
+      "localises imports of the current package split across multiple lines",
+      Gen.string,
+      Gen.string,
+      async (name, main) => {
+        const packageJson: Partial<PackageDefinition> = {
+          name,
+          main: `${main}.js`,
+        };
+        const snippet = `
+          import {
+            MyClass
+          } from '${packageJson.name}'
+          const instance: any = MyClass()
+          instance.doStuff()`;
+        const mainFile = {
+          name: `${packageJson.main}`,
+          contents: `
+            module.exports.MyClass = function MyClass () {
+              this.doStuff = () => {
+                return
+              }
+            }`,
+        };
+        const typeScriptMarkdown = wrapSnippet(snippet);
+        const projectFiles = {
+          markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
+          mainFile,
+          packageJson,
+        };
+        await createProject(projectFiles);
+        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
+          [
+            {
+              file: "README.md",
+              index: 1,
+              snippet,
+              linesWithErrors: [],
+            },
+          ]
+        );
+      }
+    );
+
+    verify.it(
+      "localises imports of the current package when from is in a different line",
+      Gen.string,
+      Gen.string,
+      async (name, main) => {
+        const packageJson: Partial<PackageDefinition> = {
+          name,
+          main: `${main}.js`,
+        };
+        const snippet = `
+          import {
+            MyClass
+          } from
+          '${packageJson.name}'
+          const instance: any = MyClass()
+          instance.doStuff()`;
+        const mainFile = {
+          name: `${packageJson.main}`,
+          contents: `
+            module.exports.MyClass = function MyClass () {
+              this.doStuff = () => {
+                return
+              }
+            }`,
+        };
+        const typeScriptMarkdown = wrapSnippet(snippet);
+        const projectFiles = {
+          markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
+          mainFile,
+          packageJson,
+        };
+        await createProject(projectFiles);
+        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
+          [
+            {
+              file: "README.md",
+              index: 1,
+              snippet,
+              linesWithErrors: [],
+            },
+          ]
+        );
+      }
+    );
+
+    verify.it(
       "can be run from a subdirectory within the project",
       Gen.array(Gen.word, 5),
       async (pathElements) => {

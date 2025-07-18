@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.0.0]
 
+### Added
+
+- Support for `import` statements split across multiple lines in snippets
+
 ### Changed
 
 - Remove dependency on `ts-node` to avoid memory issues when compiling many snippets.

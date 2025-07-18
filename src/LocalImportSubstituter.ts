@@ -134,21 +134,17 @@ export class LocalImportSubstituter {
   substituteLocalPackageImports(code: string) {
     const escapedPackageName = this.packageName.replace(/\\/g, "\\/");
     const projectImportRegex = new RegExp(
-      `('|")(?:${escapedPackageName})(/[^'"]+)?('|"|)`
+      `(from\\s+)?('|")(?:${escapedPackageName})(/[^'"]+)?('|"|)`
     );
     const codeLines = code.split("\n");
 
     const localisedLines = codeLines.map((line) => {
-      if (!line.trim().startsWith("import ")) {
-        return line;
-      }
-
       const match = projectImportRegex.exec(line);
       if (!match) {
         return line;
       }
 
-      const { 1: openQuote, 2: subPath, 3: closeQuote, index } = match;
+      const { 1: from, 2: openQuote, 3: subPath, 4: closeQuote, index } = match;
 
       const prefix = line.substring(0, index);
 
@@ -157,7 +153,7 @@ export class LocalImportSubstituter {
       const fullExportPath = path
         .join(this.packageRoot, resolvedExportPath)
         .replace(/\\/g, "\\\\");
-      return `${prefix}${openQuote}${fullExportPath}${closeQuote}`;
+      return `${prefix}${from || ""}${openQuote}${fullExportPath}${closeQuote}`;
     });
     return localisedLines.join("\n");
   }
