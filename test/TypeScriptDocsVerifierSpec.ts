@@ -389,6 +389,35 @@ export const bob = () => (<div></div>);
       }
     );
 
+    verify.it(
+      "compiles snippets when rootDir is a compiler option",
+      genSnippet,
+      Gen.word,
+      async (snippet, rootDir) => {
+        const typeScriptMarkdown = wrapSnippet(snippet);
+        await createProject({
+          markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
+          tsConfig: JSON.stringify({
+            ...defaultTsConfig,
+            compilerOptions: {
+              ...defaultTsConfig,
+              rootDir,
+            },
+          }),
+        });
+        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
+          [
+            {
+              file: "README.md",
+              index: 1,
+              snippet,
+              linesWithErrors: [],
+            },
+          ]
+        );
+      }
+    );
+
     verify.it("compiles snippets independently", async () => {
       const snippet1 = `interface Foo { bar: 123 }`;
       const snippet2 = `interface Foo { bar: () => void }`;
@@ -466,6 +495,44 @@ Gen.string()
               linesWithErrors: [],
             },
           ]
+        );
+      }
+    );
+
+    verify.it(
+      "reports compilation failures",
+      genSnippet,
+      Gen.string,
+      async (validSnippet, invalidSnippet) => {
+        const validTypeScriptMarkdown = wrapSnippet(validSnippet);
+        const invalidTypeScriptMarkdown = wrapSnippet(invalidSnippet);
+        const markdown = [
+          validTypeScriptMarkdown,
+          invalidTypeScriptMarkdown,
+        ].join("\n");
+        await createProject({
+          markdownFiles: [{ name: "README.md", contents: markdown }],
+        });
+        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.satisfy(
+          (results: TypeScriptDocsVerifier.SnippetCompilationResult[]) => {
+            results.should.have.length(2);
+            results[0].should.not.have.property("error");
+            const errorResult = results[1];
+            errorResult.should.have.property("file", "README.md");
+            errorResult.should.have.property("index", 2);
+            errorResult.should.have.property("snippet", invalidSnippet);
+            errorResult.should.have.property("error");
+            errorResult.linesWithErrors.should.deep.equal([1]);
+            errorResult?.error?.message.should.include("README.md");
+            errorResult?.error?.message.should.include("Code Block 2");
+            errorResult?.error?.message.should.not.include("block-");
+
+            Object.values(errorResult.error || {}).forEach((value: unknown) => {
+              (value as string).should.not.include("block-");
+            });
+
+            return true;
+          }
         );
       }
     );

@@ -1,4 +1,5 @@
 import ts from "typescript";
+import path from "path";
 
 const createServiceHost = (
   options: ts.CompilerOptions,
@@ -46,7 +47,10 @@ export const compile = async ({
   diagnostics: ReadonlyArray<ts.Diagnostic>;
 }> => {
   const id = process.hrtime.bigint().toString();
-  const filename = `block-${id}.${type}`;
+  const filename = path.join(
+    compilerOptions.rootDir || "",
+    `block-${id}.${type}`
+  );
 
   const fileMap = new Map<string, string>([[filename, code]]);
 
@@ -78,6 +82,7 @@ export const compile = async ({
 
     if (output.emitSkipped) {
       const diagnostics = [
+        ...service.getCompilerOptionsDiagnostics(),
         ...service.getSemanticDiagnostics(filename),
         ...service.getSyntacticDiagnostics(filename),
       ];
