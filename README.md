@@ -75,7 +75,6 @@ import {
   compileSnippets,
   SnippetCompilationResult,
 } from "typescript-docs-verifier";
-import * as http from "http";
 
 const markdownFiles = ["README", "examples.md"]; // defaults to 'README.md' if not provided
 const tsconfigPath = "docs-tsconfig.json"; // defaults to the 'tsconfig.json' file in the package root
