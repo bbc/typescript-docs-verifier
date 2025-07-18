@@ -4,7 +4,10 @@ import {
   SnippetCompilationResult,
 } from "./src/SnippetCompiler";
 
-export type { SnippetCompilationResult, CompilationError } from "./src/SnippetCompiler";
+export type {
+  SnippetCompilationResult,
+  CompilationError,
+} from "./src/SnippetCompiler";
 
 const DEFAULT_FILES = ["README.md"];
 
