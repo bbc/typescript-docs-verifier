@@ -1,8 +1,6 @@
 import * as path from "path";
 import { readFile } from "fs/promises";
 
-export type SubpathPattern = "." | string;
-
 type ConditionalExportKeys =
   | "node-addons"
   | "node"
@@ -11,7 +9,7 @@ type ConditionalExportKeys =
   | "default";
 
 export type SubpathExports = {
-  [key in SubpathPattern]?:
+  [key in string]?:
     | string
     | null
     | {
@@ -55,7 +53,7 @@ export const PackageInfo = {
     const packageRoot = await searchParentsForPackage(process.cwd());
     const packageJsonPath = path.join(packageRoot, "package.json");
     const contents = await readFile(packageJsonPath, "utf-8");
-    const packageInfo = JSON.parse(contents);
+    const packageInfo = JSON.parse(contents) as PackageDefinition;
 
     return {
       name: packageInfo.name,

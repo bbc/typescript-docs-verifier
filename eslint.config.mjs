@@ -1,37 +1,31 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import functional from "eslint-plugin-functional";
-import node from "eslint-plugin-node";
-import globals from "globals";
 import js from "@eslint/js";
-import { FlatCompat } from "@eslint/eslintrc";
-
-const compat = new FlatCompat({
-  baseDirectory: import.meta.__dirname,
-  recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all,
-});
+import { defineConfig, globalIgnores } from "eslint/config";
+import tseslint from "typescript-eslint";
+import prettier from "eslint-config-prettier/flat";
+import globals from "globals";
 
 export default defineConfig([
   globalIgnores(["**/dist"]),
   {
-    extends: compat.extends(
-      "eslint:recommended",
-      "plugin:@typescript-eslint/recommended",
-      "prettier"
-    ),
-
-    plugins: {
-      functional,
-      node,
-    },
+    extends: [
+      js.configs.recommended,
+      tseslint.configs.recommendedTypeChecked,
+      {
+        languageOptions: {
+          parserOptions: {
+            projectService: true,
+          },
+        },
+      },
+      prettier,
+    ],
 
     languageOptions: {
       globals: {
         ...globals.node,
-        ...globals.amd,
       },
 
-      ecmaVersion: 5,
+      ecmaVersion: 2022,
       sourceType: "commonjs",
     },
 
@@ -43,7 +37,14 @@ export default defineConfig([
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-non-null-assertion": "error",
       "@typescript-eslint/no-unused-vars": "error",
-      "functional/no-let": "error",
+      "@typescript-eslint/no-floating-promises": [
+        "error",
+        {
+          allowForKnownSafeCalls: [
+            { from: "package", name: ["suite", "test"], package: "node:test" },
+          ],
+        },
+      ],
     },
   },
 ]);

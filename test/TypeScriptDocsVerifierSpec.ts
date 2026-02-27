@@ -170,7 +170,7 @@ ${wrapSnippet(strings[3], "bash")}
         await createProject();
         return t.assert.rejects(
           () => TypeScriptDocsVerifier.compileSnippets(["README.md", filename]),
-          filename
+          new RegExp(filename)
         );
       }
     );
@@ -1329,7 +1329,7 @@ console.log('This line is also OK');
             markdownFiles: ["DOCS.md"],
             project: tsconfigFilename,
           }),
-        "Error reading tsconfig from"
+        /Error reading tsconfig from/
       );
     });
 

@@ -57,7 +57,7 @@ export class SnippetCompiler {
   ): ts.ParsedCommandLine {
     const configFile = ts.findConfigFile(
       packageRoot,
-      ts.sys.fileExists,
+      (...args) => ts.sys.fileExists(...args),
       project
     );
 
@@ -68,23 +68,20 @@ export class SnippetCompiler {
     }
 
     const fileContents = fs.readFileSync(configFile, "utf-8");
-    const { config: configJSON, error } = ts.parseConfigFileTextToJson(
-      configFile,
-      fileContents
-    );
+    const result = ts.parseConfigFileTextToJson(configFile, fileContents);
 
-    if (error) {
+    if (result.error) {
       throw new Error(
-        `Error reading tsconfig from ${configFile}: ${ts.flattenDiagnosticMessageText(error.messageText, ts.sys.newLine)}`
+        `Error reading tsconfig from ${configFile}: ${ts.flattenDiagnosticMessageText(result.error.messageText, ts.sys.newLine)}`
       );
     }
 
     const parsedConfig = ts.parseJsonConfigFileContent(
-      configJSON,
+      result.config,
       {
-        fileExists: ts.sys.fileExists,
-        readDirectory: ts.sys.readDirectory,
-        readFile: ts.sys.readFile,
+        fileExists: (...args) => ts.sys.fileExists(...args),
+        readDirectory: (...args) => ts.sys.readDirectory(...args),
+        readFile: (...args) => ts.sys.readFile(...args),
         useCaseSensitiveFileNames: ts.sys.useCaseSensitiveFileNames,
       },
       packageRoot
@@ -99,7 +96,7 @@ export class SnippetCompiler {
     const examples = await this.extractAllCodeBlocks(documentationFiles);
 
     for (const example of examples) {
-      const result = await this.testCodeCompilation(example);
+      const result = this.testCodeCompilation(example);
       results.push(result);
 
       // Yield to event loop
@@ -147,11 +144,9 @@ export class SnippetCompiler {
     return localisedBlock;
   }
 
-  private async testCodeCompilation(
-    example: CodeBlock
-  ): Promise<SnippetCompilationResult> {
+  private testCodeCompilation(example: CodeBlock): SnippetCompilationResult {
     try {
-      const { hasError, diagnostics } = await compile({
+      const { hasError, diagnostics } = compile({
         compilerOptions: this.compilerOptions,
         workingDirectory: this.workingDirectory,
         code: example.sanitisedCode,

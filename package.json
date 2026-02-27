@@ -48,22 +48,20 @@
     "prepublishOnly": "npm-run-all -s build compile-docs"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.4",
     "@eslint/js": "^10.0.1",
     "@types/node": "^24.10.15",
     "@types/react": "^18.2.12",
     "@types/yargs": "^17.0.12",
-    "@typescript-eslint/eslint-plugin": "^8.56.1",
     "c8": "^11.0.0",
     "eslint": "^10.0.2",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-functional": "^9.0.4",
-    "eslint-plugin-node": "^11.1.0",
+    "globals": "^17.3.0",
     "npm-run-all2": "^7.0.2",
     "prettier": "^3.5.1",
     "react": "^18.2.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1",
     "verify-it": "^2.4.0"
   },
   "dependencies": {

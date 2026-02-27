@@ -30,10 +30,10 @@ export const CodeBlockExtractor = {
     const codeBlocks: { code: string; type: "tsx" | "ts" }[] = [];
     markdown.replace(TYPESCRIPT_CODE_PATTERN, (_, type, code) => {
       codeBlocks.push({
-        code,
+        code: code as string,
         type: type === "tsx" ? "tsx" : "ts",
       });
-      return code;
+      return code as string;
     });
     return codeBlocks;
   },
