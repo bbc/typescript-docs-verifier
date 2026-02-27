@@ -2,10 +2,12 @@
 
 _Verifies that typescript examples in markdown files actually compile._
 
-[![TypeScript](https://img.shields.io/badge/%3C/%3E-TypeScript-blue.svg)](https://www.typescriptlang.org/)
-[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
-[![Apache 2.0](https://img.shields.io/hexpm/l/plug.svg)](https://www.apache.org/licenses/LICENSE-2.0)
-[![TypeScript docs verifier](https://img.shields.io/badge/checked_with_%E2%9C%93-TS_docs_verifier-blue.svg)](https://github.com/bbc/typescript-docs-verifier)
+[![TypeScript](https://img.shields.io/badge/%3C/%3E-TypeScript-blue.svg?style=flat-square)](https://www.typescriptlang.org/)
+[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
+[![TypeScript docs verifier](https://img.shields.io/badge/checked_with_%E2%9C%93-TS_docs_verifier-blue.svg?style=flat-square)](https://github.com/bbc/typescript-docs-verifier)
+[![npm version](https://img.shields.io/npm/v/typescript-docs-verifier.svg?style=flat-square)](https://www.npmjs.com/package/typescript-docs-verifier)
+[![weekly downloads from npm](https://img.shields.io/npm/dw/typescript-docs-verifier.svg?style=flat-square)](https://www.npmjs.com/package/typescript-docs-verifier)
+[![Apache 2.0](https://img.shields.io/hexpm/l/plug.svg?style=flat-square)](https://www.apache.org/licenses/LICENSE-2.0)
 
 ## Why?
 
@@ -48,7 +50,7 @@ const SomeComponent = () => (
 
 Individual code blocks can be ignored by preceding them with a `<!-- ts-docs-verifier:ignore -->` comment:
 
-````Markdown
+````md
 <!-- ts-docs-verifier:ignore -->
 ```typescript
 // This block won't be compiled by typescript-docs-verifier
