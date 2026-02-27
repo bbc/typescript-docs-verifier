@@ -1,10 +1,13 @@
-import * as os from "os";
-import * as path from "path";
-import * as FsExtra from "fs-extra";
-import { Gen } from "verify-it";
+import { it, describe, beforeEach, afterEach, TestContext } from "node:test";
+import * as os from "node:os";
+import * as path from "node:path";
+import fsSync from "node:fs";
+import fs from "node:fs/promises";
+import { Gen, init } from "verify-it";
 import * as TypeScriptDocsVerifier from "../index";
 import { PackageDefinition } from "../src/PackageInfo";
-import "chai/register-should";
+
+const verify = init({ it, describe });
 
 const workingDirectory = path.join(
   os.tmpdir(),
@@ -18,14 +21,18 @@ const defaultPackageJson = {
 };
 const defaultMainFile = {
   name: defaultPackageJson.main,
-  contents: FsExtra.readFileSync(
-    path.join(fixturePath, "main-default.ts")
-  ).toString(),
+  contents: fsSync.readFileSync(
+    path.join(fixturePath, "main-default.ts"),
+    "utf8"
+  ),
 };
 
 const defaultMarkdownFile = {
   name: "README.md",
-  contents: FsExtra.readFileSync(path.join(fixturePath, "no-typescript.md")),
+  contents: fsSync.readFileSync(
+    path.join(fixturePath, "no-typescript.md"),
+    "utf8"
+  ),
 };
 
 const defaultTsConfig = {
@@ -82,16 +89,20 @@ const createProject = async (files: ProjectFiles = {}) => {
   await Promise.all(
     filesToWrite.map(async (file: File) => {
       const filePath = path.join(workingDirectory, file.name);
-      await FsExtra.ensureFile(filePath);
-      await FsExtra.writeFile(filePath, file.contents);
+      await fs.mkdir(path.dirname(filePath), { recursive: true });
+      await fs.writeFile(filePath, file.contents);
     })
   );
 
   const nodeModulesFolder = path.join(__dirname, "..", "node_modules");
-  await FsExtra.symlink(
-    nodeModulesFolder,
-    path.join(workingDirectory, "node_modules")
-  );
+  try {
+    await fs.symlink(
+      nodeModulesFolder,
+      path.join(workingDirectory, "node_modules")
+    );
+  } catch (e: unknown) {
+    if ((e as { code?: string }).code !== "EEXIST") throw e;
+  }
 };
 
 const genSnippet = () => {
@@ -108,29 +119,28 @@ ${snippet}\`\`\``;
 describe("TypeScriptDocsVerifier", () => {
   describe("compileSnippets", () => {
     beforeEach(async () => {
-      await FsExtra.remove(workingDirectory);
-      await FsExtra.ensureDir(path.join(workingDirectory));
+      await fs.rm(workingDirectory, { recursive: true, force: true });
+      await fs.mkdir(path.join(workingDirectory), { recursive: true });
       process.chdir(workingDirectory);
     });
 
     afterEach(async () => {
-      await FsExtra.remove(workingDirectory);
+      await fs.rm(workingDirectory, { recursive: true, force: true });
     });
 
     verify.it(
       "returns an empty array if no code snippets are present",
-      async () => {
+      async (t) => {
         await createProject();
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          []
-        );
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result, []);
       }
     );
 
     verify.it(
       "returns an empty array if no typescript code snippets are present",
       Gen.array(Gen.string, 4),
-      async (strings) => {
+      async (strings, t) => {
         const noTypeScriptMarkdown = `
 # A \`README.md\` file
 
@@ -148,21 +158,20 @@ ${wrapSnippet(strings[3], "bash")}
             { name: "README.md", contents: noTypeScriptMarkdown },
           ],
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          []
-        );
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result, []);
       }
     );
 
     verify.it(
       "returns an error if a documentation file does not exist",
       Gen.string,
-      async (filename) => {
+      async (filename, t) => {
         await createProject();
-        return await TypeScriptDocsVerifier.compileSnippets([
-          "README.md",
-          filename,
-        ]).should.be.rejectedWith(filename);
+        return t.assert.rejects(
+          () => TypeScriptDocsVerifier.compileSnippets(["README.md", filename]),
+          filename
+        );
       }
     );
 
@@ -170,14 +179,13 @@ ${wrapSnippet(strings[3], "bash")}
       'returns a single element result array when a valid typescript block marked "typescript" is supplied',
       genSnippet,
       Gen.string,
-      async (snippet, fileName) => {
+      async (snippet, fileName, t) => {
         const typeScriptMarkdown = wrapSnippet(snippet);
         await createProject({
           markdownFiles: [{ name: fileName, contents: typeScriptMarkdown }],
         });
-        return await TypeScriptDocsVerifier.compileSnippets(
-          fileName
-        ).should.eventually.eql([
+        const result = await TypeScriptDocsVerifier.compileSnippets(fileName);
+        t.assert.deepEqual(result, [
           {
             file: fileName,
             index: 1,
@@ -192,14 +200,13 @@ ${wrapSnippet(strings[3], "bash")}
       'returns a single element result array when a valid typescript block marked "ts" is supplied',
       genSnippet,
       Gen.string,
-      async (snippet, fileName) => {
+      async (snippet, fileName, t) => {
         const typeScriptMarkdown = wrapSnippet(snippet, "ts");
         await createProject({
           markdownFiles: [{ name: fileName, contents: typeScriptMarkdown }],
         });
-        return await TypeScriptDocsVerifier.compileSnippets(
-          fileName
-        ).should.eventually.eql([
+        const result = await TypeScriptDocsVerifier.compileSnippets(fileName);
+        t.assert.deepEqual(result, [
           {
             file: fileName,
             index: 1,
@@ -213,7 +220,7 @@ ${wrapSnippet(strings[3], "bash")}
     verify.it(
       'returns a single element result array when a valid typescript block marked "tsx" is supplied',
       Gen.string,
-      async (fileName) => {
+      async (fileName, t) => {
         const typeScriptMarkdown = `import React from 'react';
 export const bob = () => (<div></div>);
 `;
@@ -233,9 +240,8 @@ export const bob = () => (<div></div>);
             },
           }),
         });
-        return await TypeScriptDocsVerifier.compileSnippets(
-          fileName
-        ).should.eventually.eql([
+        const result = await TypeScriptDocsVerifier.compileSnippets(fileName);
+        t.assert.deepEqual(result, [
           {
             file: fileName,
             index: 1,
@@ -250,7 +256,7 @@ export const bob = () => (<div></div>);
       "ignores code blocks preceded by <!-- ts-docs-verifier:ignore --> ",
       genSnippet,
       Gen.string,
-      async (snippet, fileName) => {
+      async (snippet, fileName, t) => {
         const ignoreString = "<!-- ts-docs-verifier:ignore -->";
         const typeScriptMarkdown = `${ignoreString}${wrapSnippet(
           snippet,
@@ -259,9 +265,8 @@ export const bob = () => (<div></div>);
         await createProject({
           markdownFiles: [{ name: fileName, contents: typeScriptMarkdown }],
         });
-        return await TypeScriptDocsVerifier.compileSnippets(
-          fileName
-        ).should.eventually.eql([]);
+        const result = await TypeScriptDocsVerifier.compileSnippets(fileName);
+        t.assert.deepEqual(result, []);
       }
     );
 
@@ -269,7 +274,7 @@ export const bob = () => (<div></div>);
       "compiles snippets from multiple files",
       Gen.distinct(genSnippet, 6),
       Gen.distinct(Gen.string, 3),
-      async (snippets, fileNames) => {
+      async (snippets, fileNames, t) => {
         const markdownFiles = fileNames.map((fileName, index) => {
           return {
             name: fileName,
@@ -297,53 +302,50 @@ export const bob = () => (<div></div>);
         });
 
         await createProject({ markdownFiles: markdownFiles });
-        return await TypeScriptDocsVerifier.compileSnippets(
-          fileNames
-        ).should.eventually.eql(expected);
+        const result = await TypeScriptDocsVerifier.compileSnippets(fileNames);
+        t.assert.deepEqual(result, expected);
       }
     );
 
     verify.it(
       "reads from README.md if no file paths are supplied",
       genSnippet,
-      async (snippet) => {
+      async (snippet, t) => {
         const typeScriptMarkdown = wrapSnippet(snippet);
 
         await createProject({
           markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result, [
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
     verify.it(
       "returns an empty array if an empty array is provided",
       genSnippet,
-      async (snippet) => {
+      async (snippet, t) => {
         const typeScriptMarkdown = wrapSnippet(snippet);
 
         await createProject({
           markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
         });
-        return await TypeScriptDocsVerifier.compileSnippets(
-          []
-        ).should.eventually.eql([]);
+        const result = await TypeScriptDocsVerifier.compileSnippets([]);
+        t.assert.deepEqual(result, []);
       }
     );
 
     verify.it(
       "returns multiple results when multiple TypeScript snippets are supplied",
       Gen.array(genSnippet, Gen.integerBetween(2, 6)()),
-      async (snippets) => {
+      async (snippets, t) => {
         const markdownBlocks = snippets.map((snippet) => wrapSnippet(snippet));
         const markdown = markdownBlocks.join("\n");
         const expected = snippets.map((snippet, index) => {
@@ -358,17 +360,15 @@ export const bob = () => (<div></div>);
         await createProject({
           markdownFiles: [{ name: "README.md", contents: markdown }],
         });
-        return () =>
-          TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-            expected
-          );
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result, expected);
       }
     );
 
     verify.it(
       "compiles snippets with import statements",
       genSnippet,
-      async (snippet) => {
+      async (snippet, t) => {
         snippet = `import * as path from 'path'
           path.join('.', 'some-path')
           ${snippet}`;
@@ -376,16 +376,15 @@ export const bob = () => (<div></div>);
         await createProject({
           markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result, [
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
@@ -393,7 +392,7 @@ export const bob = () => (<div></div>);
       "compiles snippets when rootDir is a compiler option",
       genSnippet,
       Gen.word,
-      async (snippet, rootDir) => {
+      async (snippet, rootDir, t) => {
         const typeScriptMarkdown = wrapSnippet(snippet);
         await createProject({
           markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
@@ -405,48 +404,46 @@ export const bob = () => (<div></div>);
             },
           }),
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result, [
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
-    verify.it("compiles snippets independently", async () => {
+    verify.it("compiles snippets independently", async (t) => {
       const snippet1 = `interface Foo { bar: 123 }`;
       const snippet2 = `interface Foo { bar: () => void }`;
       const typeScriptMarkdown = wrapSnippet(snippet1) + wrapSnippet(snippet2);
       await createProject({
         markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
       });
-      return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-        [
-          {
-            file: "README.md",
-            index: 1,
-            snippet: snippet1,
-            linesWithErrors: [],
-          },
-          {
-            file: "README.md",
-            index: 2,
-            snippet: snippet2,
-            linesWithErrors: [],
-          },
-        ]
-      );
+      const result = await TypeScriptDocsVerifier.compileSnippets();
+      t.assert.deepEqual(result, [
+        {
+          file: "README.md",
+          index: 1,
+          snippet: snippet1,
+          linesWithErrors: [],
+        },
+        {
+          file: "README.md",
+          index: 2,
+          snippet: snippet2,
+          linesWithErrors: [],
+        },
+      ]);
     });
 
     verify.it(
       "compiles snippets containing modules",
       genSnippet,
-      async (snippet) => {
+      async (snippet, t) => {
         snippet = `declare module "url" {
   export interface Url {
     someAdditionalProperty: boolean
@@ -457,28 +454,25 @@ ${snippet}`;
         await createProject({
           markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result, [
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
     verify.it(
       "compiles snippets that use the current project dependencies",
       genSnippet,
-      async (snippet) => {
+      async (snippet, t) => {
         snippet = `
 // These are some of the TypeScript dependencies of this project
-import {} from 'mocha'
 import { Gen } from 'verify-it'
-import * as chai from 'chai'
 
 Gen.string()
           ${snippet}`;
@@ -486,16 +480,15 @@ Gen.string()
         await createProject({
           markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result, [
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
@@ -503,7 +496,7 @@ Gen.string()
       "reports compilation failures",
       genSnippet,
       Gen.string,
-      async (validSnippet, invalidSnippet) => {
+      async (validSnippet, invalidSnippet, t: TestContext) => {
         const validTypeScriptMarkdown = wrapSnippet(validSnippet);
         const invalidTypeScriptMarkdown = wrapSnippet(invalidSnippet);
         const markdown = [
@@ -513,34 +506,36 @@ Gen.string()
         await createProject({
           markdownFiles: [{ name: "README.md", contents: markdown }],
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.satisfy(
-          (results: TypeScriptDocsVerifier.SnippetCompilationResult[]) => {
-            results.should.have.length(2);
-            results[0].should.not.have.property("error");
-            const errorResult = results[1];
-            errorResult.should.have.property("file", "README.md");
-            errorResult.should.have.property("index", 2);
-            errorResult.should.have.property("snippet", invalidSnippet);
-            errorResult.should.have.property("error");
-            errorResult.linesWithErrors.should.deep.equal([1]);
-            errorResult?.error?.message.should.include("README.md");
-            errorResult?.error?.message.should.include("Code Block 2");
-            errorResult?.error?.message.should.not.include("block-");
+        const result = await TypeScriptDocsVerifier.compileSnippets();
 
-            Object.values(errorResult.error || {}).forEach((value: unknown) => {
-              (value as string).should.not.include("block-");
-            });
+        t.assert.deepEqual(result.length, 2);
+        t.assert.ok(!("error" in result[0]));
 
-            return true;
+        const errorResult = result[1];
+
+        t.assert.partialDeepStrictEqual(errorResult, {
+          file: "README.md",
+          index: 2,
+          snippet: invalidSnippet,
+          linesWithErrors: [1],
+        });
+        t.assert.ok("error" in errorResult);
+        t.assert.match(errorResult.error?.message ?? "", /README\.md/);
+        t.assert.match(errorResult.error?.message ?? "", /Code Block 2/);
+        t.assert.doesNotMatch(errorResult.error?.message ?? "", /block-/);
+
+        Object.values(errorResult.error || {}).forEach((value: unknown) => {
+          if (typeof value === "string") {
+            t.assert.doesNotMatch(value, /block-/);
           }
-        );
+        });
       }
     );
 
     verify.it(
       "reports compilation failures when ts-node is configured to transpile only in tsconfig.json",
       genSnippet,
-      async (validSnippet) => {
+      async (validSnippet, t: TestContext) => {
         const invalidSnippet = `import('fs').thisFunctionDoesNotExist();`;
         const validTypeScriptMarkdown = wrapSnippet(validSnippet);
         const invalidTypeScriptMarkdown = wrapSnippet(invalidSnippet);
@@ -557,75 +552,80 @@ Gen.string()
             },
           }),
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.satisfy(
-          (results: TypeScriptDocsVerifier.SnippetCompilationResult[]) => {
-            results.should.have.length(2);
-            results[0].should.not.have.property("error");
-            const errorResult = results[1];
-            errorResult.should.have.property("file", "README.md");
-            errorResult.should.have.property("index", 2);
-            errorResult.should.have.property("snippet", invalidSnippet);
-            errorResult.should.have.property("error");
-            errorResult.linesWithErrors.should.deep.equal([1]);
-            errorResult?.error?.message.should.include("README.md");
-            errorResult?.error?.message.should.include("Code Block 2");
-            errorResult?.error?.message.should.not.include("block-");
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result.length, 2);
+        t.assert.ok(!("error" in result[0]));
 
-            Object.values(errorResult.error || {}).forEach((value: unknown) => {
-              (value as string).should.not.include("block-");
-            });
+        const errorResult = result[1];
+        t.assert.partialDeepStrictEqual(errorResult, {
+          file: "README.md",
+          index: 2,
+          snippet: invalidSnippet,
+          linesWithErrors: [1],
+        });
+        t.assert.ok("error" in errorResult);
 
-            return true;
+        t.assert.match(errorResult.error?.message ?? "", /README\.md/);
+        t.assert.match(errorResult.error?.message ?? "", /Code Block 2/);
+        t.assert.doesNotMatch(errorResult.error?.message ?? "", /block-/);
+
+        Object.values(errorResult.error || {}).forEach((value: unknown) => {
+          if (typeof value === "string") {
+            t.assert.doesNotMatch(value, /block-/);
           }
-        );
+        });
       }
     );
 
-    verify.it("reports compilation failures on the correct line", async () => {
-      const mainFile = {
-        name: `${defaultPackageJson.main}`,
-        contents: "export class MyClass {}",
-      };
+    verify.it(
+      "reports compilation failures on the correct line",
+      async (t: TestContext) => {
+        const mainFile = {
+          name: `${defaultPackageJson.main}`,
+          contents: "export class MyClass {}",
+        };
 
-      const invalidSnippet = `import { MyClass } from '${defaultPackageJson.name}';
+        const invalidSnippet = `import { MyClass } from '${defaultPackageJson.name}';
 
 const thisIsOK = true;
 firstLineOK = false;
 console.log('This line is also OK');
 `;
-      const invalidTypeScriptMarkdown = wrapSnippet(invalidSnippet);
-      await createProject({
-        markdownFiles: [
-          { name: "README.md", contents: invalidTypeScriptMarkdown },
-        ],
-        mainFile,
-      });
+        const invalidTypeScriptMarkdown = wrapSnippet(invalidSnippet);
+        await createProject({
+          markdownFiles: [
+            { name: "README.md", contents: invalidTypeScriptMarkdown },
+          ],
+          mainFile,
+        });
 
-      return await TypeScriptDocsVerifier.compileSnippets().should.eventually.satisfy(
-        (results: TypeScriptDocsVerifier.SnippetCompilationResult[]) => {
-          results.should.have.length(1);
-          const errorResult = results[0];
-          errorResult.should.have.property("file", "README.md");
-          errorResult.should.have.property("index", 1);
-          errorResult.should.have.property("snippet", invalidSnippet);
-          errorResult.should.have.property("error");
-          errorResult.linesWithErrors.should.deep.equal([4]);
-          errorResult?.error?.message.should.include("README.md");
-          errorResult?.error?.message.should.include("Code Block 1");
-          errorResult?.error?.message.should.not.include("block-");
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result.length, 1);
 
-          Object.values(errorResult?.error || {}).forEach((value) => {
-            (value as string).should.not.include("block-");
-          });
+        const errorResult = result[0];
+        t.assert.partialDeepStrictEqual(errorResult, {
+          file: "README.md",
+          index: 1,
+          snippet: invalidSnippet,
+          linesWithErrors: [4],
+        });
+        t.assert.ok("error" in errorResult);
 
-          return true;
-        }
-      );
-    });
+        t.assert.match(errorResult.error?.message ?? "", /README\.md/);
+        t.assert.match(errorResult.error?.message ?? "", /Code Block 1/);
+        t.assert.doesNotMatch(errorResult.error?.message ?? "", /block-/);
+
+        Object.values(errorResult.error || {}).forEach((value: unknown) => {
+          if (typeof value === "string") {
+            t.assert.doesNotMatch(value, /block-/);
+          }
+        });
+      }
+    );
 
     verify.it(
       "localises imports of the current package if the package main is a js file",
-      async () => {
+      async (t: TestContext) => {
         const snippet = `
           import { MyClass } from '${defaultPackageJson.name}'
           const instance = new MyClass()
@@ -644,22 +644,21 @@ console.log('This line is also OK');
           markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
           mainFile,
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result, [
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
     verify.it(
       "localises imports of the current package if the package main is a jsx file",
-      async () => {
+      async (t: TestContext) => {
         const snippet = `
           import React from 'react';
           import { MyComponent } from '${defaultPackageJson.name}';
@@ -691,22 +690,21 @@ console.log('This line is also OK');
             },
           }),
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result, [
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
     verify.it(
       "localises imports of the current package using exports.require if it exists",
-      async () => {
+      async (t: TestContext) => {
         const snippet = `
           import { MyClass } from '${defaultPackageJson.name}'
           const instance = new MyClass()
@@ -734,22 +732,21 @@ console.log('This line is also OK');
           mainFile,
           packageJson,
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result, [
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
     verify.it(
       'localises imports of the current package using exports["."].require if it exists',
-      async () => {
+      async (t: TestContext) => {
         const snippet = `
           import { MyClass } from '${defaultPackageJson.name}'
           const instance = new MyClass()
@@ -779,22 +776,21 @@ console.log('This line is also OK');
           mainFile,
           packageJson,
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result, [
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
     verify.it(
       'localises imports of named files within the current package using exports["./something/*"] if it exists',
-      async () => {
+      async (t: TestContext) => {
         const sourceFolder = Gen.word();
         const snippet = `
           import { MyClass } from '${defaultPackageJson.name}/something/other'
@@ -834,22 +830,21 @@ console.log('This line is also OK');
           packageJson,
         });
 
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result, [
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
     verify.it(
       'localises imports of wildcard files within the current package using exports = "./prefix/*/path" if it exists',
-      async () => {
+      async (t: TestContext) => {
         const sourceFolder = Gen.word();
         const snippet = `
           import { MyClass } from '${defaultPackageJson.name}/some/export'
@@ -893,22 +888,21 @@ console.log('This line is also OK');
           packageJson,
         });
 
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result, [
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
     verify.it(
       "localises imports of files within the current package",
-      async () => {
+      async (t: TestContext) => {
         const sourceFolder = Gen.word();
         const snippet = `
           import { MyClass } from '${defaultPackageJson.name}/${sourceFolder}/other'
@@ -938,22 +932,21 @@ console.log('This line is also OK');
           mainFile,
           otherFiles: [otherFile],
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result, [
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
     verify.it(
       "localises only the package name in imports of files within the current package",
-      async () => {
+      async (t: TestContext) => {
         const snippet = `
           import lib from 'lib/lib/other'
           const instance = new lib.MyClass()
@@ -989,22 +982,21 @@ console.log('This line is also OK');
           mainFile,
           otherFiles: [otherFile],
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result, [
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
     verify.it(
       "localises imports of the current package if the package name is scoped",
-      async () => {
+      async (t: TestContext) => {
         const snippet = `
           import { MyClass } from '@bbc/${defaultPackageJson.name}'
           const instance = new MyClass()
@@ -1028,22 +1020,21 @@ console.log('This line is also OK');
             name: `@bbc/${defaultPackageJson.name}`,
           },
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result, [
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
     verify.it(
       "localises imports of files within the current package when the package is scoped",
-      async () => {
+      async (t: TestContext) => {
         const sourceFolder = Gen.word();
         const snippet = `
           import { MyClass } from '@bbc/${defaultPackageJson.name}/${sourceFolder}/other'
@@ -1077,16 +1068,15 @@ console.log('This line is also OK');
           },
           otherFiles: [otherFile],
         });
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result, [
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
@@ -1094,7 +1084,7 @@ console.log('This line is also OK');
       "localises imports of the current package if the package main is a js file",
       Gen.string,
       Gen.string,
-      async (name, main) => {
+      async (name, main, t) => {
         const packageJson: Partial<PackageDefinition> = {
           name,
           main: `${main}.js`,
@@ -1119,16 +1109,15 @@ console.log('This line is also OK');
           packageJson,
         };
         await createProject(projectFiles);
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result, [
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
@@ -1136,7 +1125,7 @@ console.log('This line is also OK');
       "localises imports of the current package split across multiple lines",
       Gen.string,
       Gen.string,
-      async (name, main) => {
+      async (name, main, t) => {
         const packageJson: Partial<PackageDefinition> = {
           name,
           main: `${main}.js`,
@@ -1163,16 +1152,15 @@ console.log('This line is also OK');
           packageJson,
         };
         await createProject(projectFiles);
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result, [
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
@@ -1180,7 +1168,7 @@ console.log('This line is also OK');
       "localises imports of the current package when from is in a different line",
       Gen.string,
       Gen.string,
-      async (name, main) => {
+      async (name, main, t) => {
         const packageJson: Partial<PackageDefinition> = {
           name,
           main: `${main}.js`,
@@ -1208,23 +1196,22 @@ console.log('This line is also OK');
           packageJson,
         };
         await createProject(projectFiles);
-        return await TypeScriptDocsVerifier.compileSnippets().should.eventually.eql(
-          [
-            {
-              file: "README.md",
-              index: 1,
-              snippet,
-              linesWithErrors: [],
-            },
-          ]
-        );
+        const result = await TypeScriptDocsVerifier.compileSnippets();
+        t.assert.deepEqual(result, [
+          {
+            file: "README.md",
+            index: 1,
+            snippet,
+            linesWithErrors: [],
+          },
+        ]);
       }
     );
 
     verify.it(
       "can be run from a subdirectory within the project",
       Gen.array(Gen.word, 5),
-      async (pathElements) => {
+      async (pathElements, t) => {
         const snippet = `
           import { MyClass } from '${defaultPackageJson.name}'
           const instance = new MyClass()
@@ -1249,7 +1236,7 @@ console.log('This line is also OK');
           workingDirectory,
           ...pathElements
         );
-        await FsExtra.ensureDir(newCurrentDirectory);
+        await fs.mkdir(newCurrentDirectory, { recursive: true });
         process.chdir(path.join(...pathElements));
 
         const pathToMarkdownFile = path.join(
@@ -1257,9 +1244,10 @@ console.log('This line is also OK');
           "DOCS.md"
         );
 
-        return await TypeScriptDocsVerifier.compileSnippets([
+        const result = await TypeScriptDocsVerifier.compileSnippets([
           pathToMarkdownFile,
-        ]).should.eventually.eql([
+        ]);
+        t.assert.deepEqual(result, [
           {
             file: pathToMarkdownFile,
             index: 1,
@@ -1270,7 +1258,7 @@ console.log('This line is also OK');
       }
     );
 
-    verify.it("handles a non-JSON content in tsconfig.json file", async () => {
+    verify.it("handles a non-JSON content in tsconfig.json file", async (t) => {
       const snippet = `
           import { MyClass } from '${defaultPackageJson.name}'
           await Promise.resolve();
@@ -1300,15 +1288,16 @@ console.log('This line is also OK');
         },
       }`;
 
-      await FsExtra.writeFile(
+      await fs.writeFile(
         path.join(workingDirectory, tsconfigFilename),
         tsconfigText
       );
 
-      return await TypeScriptDocsVerifier.compileSnippets({
+      const result = await TypeScriptDocsVerifier.compileSnippets({
         markdownFiles: ["DOCS.md"],
         project: tsconfigFilename,
-      }).should.eventually.eql([
+      });
+      t.assert.deepEqual(result, [
         {
           file: "DOCS.md",
           index: 1,
@@ -1318,7 +1307,7 @@ console.log('This line is also OK');
       ]);
     });
 
-    verify.it("returns an error if the tsconfig file is invalid", async () => {
+    verify.it("returns an error if the tsconfig file is invalid", async (t) => {
       await createProject();
 
       const tsconfigFilename = `tsconfig.json`;
@@ -1329,29 +1318,31 @@ console.log('This line is also OK');
         },
       `;
 
-      await FsExtra.writeFile(
+      await fs.writeFile(
         path.join(workingDirectory, tsconfigFilename),
         tsconfigText
       );
 
-      return await TypeScriptDocsVerifier.compileSnippets({
-        markdownFiles: ["DOCS.md"],
-        project: tsconfigFilename,
-      }).should.be.rejectedWith("Error reading tsconfig from");
+      return await t.assert.rejects(
+        () =>
+          TypeScriptDocsVerifier.compileSnippets({
+            markdownFiles: ["DOCS.md"],
+            project: tsconfigFilename,
+          }),
+        "Error reading tsconfig from"
+      );
     });
 
     verify.it(
       "uses the default settings if an empty object is supplied",
       genSnippet,
-      Gen.string,
-      async (snippet) => {
+      async (snippet, t) => {
         const typeScriptMarkdown = wrapSnippet(snippet);
         await createProject({
           markdownFiles: [{ name: "README.md", contents: typeScriptMarkdown }],
         });
-        return await TypeScriptDocsVerifier.compileSnippets(
-          {}
-        ).should.eventually.eql([
+        const result = await TypeScriptDocsVerifier.compileSnippets({});
+        t.assert.deepEqual(result, [
           {
             file: "README.md",
             index: 1,
@@ -1364,7 +1355,7 @@ console.log('This line is also OK');
 
     verify.it(
       "overrides the tsconfig.json path when the --project flag is used",
-      async () => {
+      async (t) => {
         const snippet = `
           import { MyClass } from '${defaultPackageJson.name}'
           await Promise.resolve();
@@ -1394,15 +1385,16 @@ console.log('This line is also OK');
           },
         };
 
-        await FsExtra.writeJSON(
+        await fs.writeFile(
           path.join(workingDirectory, tsconfigFilename),
-          tsconfigJson
+          JSON.stringify(tsconfigJson)
         );
 
-        return await TypeScriptDocsVerifier.compileSnippets({
+        const result = await TypeScriptDocsVerifier.compileSnippets({
           markdownFiles: ["DOCS.md"],
           project: tsconfigFilename,
-        }).should.eventually.eql([
+        });
+        t.assert.deepEqual(result, [
           {
             file: "DOCS.md",
             index: 1,
@@ -1415,7 +1407,7 @@ console.log('This line is also OK');
 
     verify.it(
       "supports a file path (not just a file name) with the --project flag",
-      async () => {
+      async (t) => {
         const snippet = `
           import { MyClass } from '${defaultPackageJson.name}'
           await Promise.resolve();
@@ -1446,16 +1438,19 @@ console.log('This line is also OK');
           },
         };
 
-        await FsExtra.ensureDir(path.join(workingDirectory, tsconfigDirectory));
-        await FsExtra.writeJSON(
+        await fs.mkdir(path.join(workingDirectory, tsconfigDirectory), {
+          recursive: true,
+        });
+        await fs.writeFile(
           path.join(workingDirectory, tsconfigDirectory, tsconfigFile),
-          tsconfigJson
+          JSON.stringify(tsconfigJson)
         );
 
-        return await TypeScriptDocsVerifier.compileSnippets({
+        const result = await TypeScriptDocsVerifier.compileSnippets({
           project: path.join(tsconfigDirectory, tsconfigFile),
           markdownFiles: ["DOCS.md"],
-        }).should.eventually.eql([
+        });
+        t.assert.deepEqual(result, [
           {
             file: "DOCS.md",
             index: 1,
