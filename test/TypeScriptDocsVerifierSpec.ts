@@ -168,8 +168,8 @@ ${wrapSnippet(strings[3], "bash")}
       Gen.string,
       async (filename, t) => {
         await createProject();
-        return t.assert.rejects(
-          () => TypeScriptDocsVerifier.compileSnippets(["README.md", filename]),
+        await t.assert.rejects(
+          TypeScriptDocsVerifier.compileSnippets(["README.md", filename]),
           new RegExp(filename)
         );
       }
@@ -1323,12 +1323,11 @@ console.log('This line is also OK');
         tsconfigText
       );
 
-      return await t.assert.rejects(
-        () =>
-          TypeScriptDocsVerifier.compileSnippets({
-            markdownFiles: ["DOCS.md"],
-            project: tsconfigFilename,
-          }),
+      await t.assert.rejects(
+        TypeScriptDocsVerifier.compileSnippets({
+          markdownFiles: ["DOCS.md"],
+          project: tsconfigFilename,
+        }),
         /Error reading tsconfig from/
       );
     });
