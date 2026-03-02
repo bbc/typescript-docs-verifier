@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "lib": ["es2022"],
+    "jsx": "react",
+    "declaration": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "noEmitOnError": true,
+    "pretty": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "moduleResolution": "node",
+    "typeRoots": ["node_modules/@types"],
+    "skipLibCheck": true
+  },
+  "files": ["index.ts", "bin/compile-typescript-docs.ts"]
+}

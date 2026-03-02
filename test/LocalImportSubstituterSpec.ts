@@ -1,4 +1,4 @@
-import { expect } from "chai";
+import { describe, it, type TestContext } from "node:test";
 import { LocalImportSubstituter } from "../src/LocalImportSubstituter";
 
 const defaultPackageInfo = {
@@ -202,7 +202,7 @@ const scenarios = [
 ];
 
 describe("LocalImportSubstituter", () => {
-  it("does not change imports for different packages", () => {
+  it("does not change imports for different packages", (t: TestContext) => {
     const substituter = new LocalImportSubstituter(defaultPackageInfo);
 
     const code = `import * as other from "package"
@@ -210,22 +210,23 @@ describe("LocalImportSubstituter", () => {
 console.log('Should not be mutated')`;
     const result = substituter.substituteLocalPackageImports(code);
 
-    expect(result).to.eql(code);
+    t.assert.strictEqual(result, code);
   });
 
-  it("throws an error if main and exports are both not defined", () => {
-    expect(
+  it("throws an error if main and exports are both not defined", (t) => {
+    t.assert.throws(
       () =>
         new LocalImportSubstituter({
           name: "my-package",
           packageRoot: "/path/to/package",
-        })
-    ).to.throw(
-      "Failed to find a valid main or exports entry in package.json file"
+        }),
+      new Error(
+        "Failed to find a valid main or exports entry in package.json file"
+      )
     );
   });
 
-  it("throws an error if exports does not contain a valid entry under default", () => {
+  it("throws an error if exports does not contain a valid entry under default", (t) => {
     const substituter = new LocalImportSubstituter({
       name: "my-package",
       packageRoot: "/path/to/package",
@@ -235,12 +236,16 @@ console.log('Should not be mutated')`;
         },
       },
     });
-    expect(() =>
-      substituter.substituteLocalPackageImports('import {} from "my-package"')
-    ).to.throw('Unable to resolve export for path "my-package"');
+    t.assert.throws(
+      () =>
+        substituter.substituteLocalPackageImports(
+          'import {} from "my-package"'
+        ),
+      new Error('Unable to resolve export for path "my-package"')
+    );
   });
 
-  it("throws an error if exports contains only an undefined value under default", () => {
+  it("throws an error if exports contains only an undefined value under default", (t) => {
     const substituter = new LocalImportSubstituter({
       name: "my-package",
       packageRoot: "/path/to/package",
@@ -250,9 +255,13 @@ console.log('Should not be mutated')`;
         },
       },
     });
-    expect(() =>
-      substituter.substituteLocalPackageImports('import {} from "my-package"')
-    ).to.throw('Unable to resolve export for path "my-package"');
+    t.assert.throws(
+      () =>
+        substituter.substituteLocalPackageImports(
+          'import {} from "my-package"'
+        ),
+      new Error('Unable to resolve export for path "my-package"')
+    );
   });
 
   scenarios.forEach(
@@ -263,7 +272,7 @@ console.log('Should not be mutated')`;
       packageName = "awesome",
       packageInfo = {},
     }) => {
-      it(`localises imports with ${name}`, () => {
+      it(`localises imports with ${name}`, (t: TestContext) => {
         const substituter = new LocalImportSubstituter({
           ...defaultPackageInfo,
           ...packageInfo,
@@ -278,9 +287,10 @@ console.log('Something happened')
 
         const localised = substituter.substituteLocalPackageImports(code);
 
-        expect(localised).satisfies((actual: string) => {
-          return actual.trim().startsWith(expected);
-        }, `${localised} should start with ${expected}`);
+        t.assert.ok(
+          localised.trim().startsWith(expected),
+          `${localised} should start with ${expected}`
+        );
       });
     }
   );

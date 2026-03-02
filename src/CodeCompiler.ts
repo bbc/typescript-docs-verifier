@@ -26,13 +26,13 @@ const createServiceHost = (
     return fileMap.has(fileName) || ts.sys.fileExists(fileName);
   },
   getCurrentDirectory: () => workingDirectory,
-  getDirectories: ts.sys.getDirectories,
-  directoryExists: ts.sys.directoryExists,
+  getDirectories: (...args) => ts.sys.getDirectories(...args),
+  directoryExists: (...args) => ts.sys.directoryExists(...args),
   getCompilationSettings: () => options,
   getDefaultLibFileName: () => ts.getDefaultLibFilePath(options),
 });
 
-export const compile = async ({
+export const compile = ({
   compilerOptions,
   workingDirectory,
   code,
@@ -42,10 +42,10 @@ export const compile = async ({
   workingDirectory: string;
   code: string;
   type: "ts" | "tsx";
-}): Promise<{
+}): {
   hasError: boolean;
   diagnostics: ReadonlyArray<ts.Diagnostic>;
-}> => {
+} => {
   const id = process.hrtime.bigint().toString();
   const filename = path.join(
     compilerOptions.rootDir || "",
