@@ -3,7 +3,7 @@
 import ora from "ora";
 import chalk from "chalk";
 import * as yargs from "yargs";
-import * as TypeScriptDocsVerifier from "../index";
+import * as TypeScriptDocsVerifier from "../index.js";
 
 const cliOptions = yargs
   .option("input-files", {

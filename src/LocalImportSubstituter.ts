@@ -4,7 +4,7 @@ import {
   PackageDefinition,
   PackageExports,
   SubpathExports,
-} from "./PackageInfo";
+} from "./PackageInfo.js";
 
 class ExportResolver {
   private readonly packageName: string;

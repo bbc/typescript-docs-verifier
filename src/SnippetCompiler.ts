@@ -1,9 +1,9 @@
 import fs from "fs";
 import ts from "typescript";
-import { PackageDefinition } from "./PackageInfo";
-import { CodeBlockExtractor } from "./CodeBlockExtractor";
-import { LocalImportSubstituter } from "./LocalImportSubstituter";
-import { compile } from "./CodeCompiler";
+import { PackageDefinition } from "./PackageInfo.js";
+import { CodeBlockExtractor } from "./CodeBlockExtractor.js";
+import { LocalImportSubstituter } from "./LocalImportSubstituter.js";
+import { compile } from "./CodeCompiler.js";
 
 type CodeBlock = {
   readonly file: string;
