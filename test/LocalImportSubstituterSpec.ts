@@ -1,5 +1,5 @@
 import { describe, it, type TestContext } from "node:test";
-import { LocalImportSubstituter } from "../src/LocalImportSubstituter";
+import { LocalImportSubstituter } from "../src/LocalImportSubstituter.ts";
 
 const defaultPackageInfo = {
   name: "my-package",

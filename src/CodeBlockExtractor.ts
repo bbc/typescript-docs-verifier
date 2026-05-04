@@ -1,4 +1,4 @@
-import { readFile } from "fs/promises";
+import { readFile } from "node:fs/promises";
 
 const TYPESCRIPT_CODE_PATTERN =
   /(?<!(?:<!--\s*ts-docs-verifier:ignore\s*-->[\r?\n]*))(?:```(?:(?:typescript)|(tsx?))\r?\n)((?:\r?\n|.)*?)(?:(?=```))/gi;

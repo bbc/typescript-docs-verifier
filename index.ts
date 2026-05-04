@@ -1,13 +1,13 @@
-import { PackageInfo } from "./src/PackageInfo";
+import { PackageInfo } from "./src/PackageInfo.ts";
 import {
   SnippetCompiler,
   SnippetCompilationResult,
-} from "./src/SnippetCompiler";
+} from "./src/SnippetCompiler.ts";
 
 export type {
   SnippetCompilationResult,
   CompilationError,
-} from "./src/SnippetCompiler";
+} from "./src/SnippetCompiler.js";
 
 const DEFAULT_FILES = ["README.md"];
 
