@@ -4,8 +4,8 @@ import * as path from "node:path";
 import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import { Gen, init } from "verify-it";
-import * as TypeScriptDocsVerifier from "../index";
-import { PackageDefinition } from "../src/PackageInfo";
+import * as TypeScriptDocsVerifier from "../index.ts";
+import { PackageDefinition } from "../src/PackageInfo.ts";
 
 const verify = init({ it, describe });
 

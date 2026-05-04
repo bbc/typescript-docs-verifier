@@ -1,10 +1,10 @@
-import * as path from "path";
+import * as path from "node:path";
 import {
   ConditionalExports,
   PackageDefinition,
   PackageExports,
   SubpathExports,
-} from "./PackageInfo.js";
+} from "./PackageInfo.ts";
 
 class ExportResolver {
   private readonly packageName: string;

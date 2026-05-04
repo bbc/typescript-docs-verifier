@@ -1,8 +1,8 @@
-import { PackageInfo } from "./src/PackageInfo.js";
+import { PackageInfo } from "./src/PackageInfo.ts";
 import {
   SnippetCompiler,
   SnippetCompilationResult,
-} from "./src/SnippetCompiler.js";
+} from "./src/SnippetCompiler.ts";
 
 export type {
   SnippetCompilationResult,

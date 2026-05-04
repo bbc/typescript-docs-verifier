@@ -20,7 +20,8 @@
     "noImplicitReturns": true,
     "moduleResolution": "node",
     "typeRoots": ["node_modules/@types"],
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "rewriteRelativeImportExtensions": true
   },
   "files": ["index.ts", "bin/compile-typescript-docs.ts"]
 }

@@ -1,5 +1,5 @@
 import ts from "typescript";
-import path from "path";
+import path from "node:path";
 
 const createServiceHost = (
   options: ts.CompilerOptions,
